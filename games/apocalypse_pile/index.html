@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Apocalypse — Merge Protocol</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;touch-action:none;background:#0e1116;color:#e8e6df;font-family:'SF Mono','Roboto Mono','Courier New',monospace;-webkit-font-smoothing:antialiased}
+  body{display:flex;flex-direction:column;align-items:stretch;padding:8px;gap:8px;max-width:480px;margin:0 auto;height:100vh}
+
+  /* ── HUD ── */
+  #hud{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+  .hud-row{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.12em;color:#6b7280;text-transform:uppercase}
+  .hud-row .v{color:#e8e6df;font-weight:700;font-size:13px;letter-spacing:.05em}
+
+  #problem-card{
+    background:#1a1d24;border:1px solid #2a2f3a;border-left:3px solid var(--accent,#ffb627);
+    padding:10px 12px;display:flex;align-items:center;gap:10px;border-radius:2px;
+    transition:border-color .2s,background .2s;
+  }
+  #problem-card.urgent{animation:pulse 1s ease-in-out infinite;border-left-color:#ff3b30}
+  #problem-card.idle{border-left-color:#3a3f4a;opacity:.6}
+  @keyframes pulse{
+    0%,100%{background:#1a1d24}
+    50%{background:#2a1818}
+  }
+  #problem-shape{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  #problem-info{flex:1;min-width:0}
+  #problem-label{font-size:9px;letter-spacing:.18em;color:#6b7280;text-transform:uppercase;margin-bottom:2px}
+  #problem-desc{font-size:13px;font-weight:600;color:#e8e6df;line-height:1.2}
+  #problem-countdown{font-variant-numeric:tabular-nums;font-size:22px;font-weight:700;color:var(--accent,#ffb627);min-width:36px;text-align:right;line-height:1}
+  #problem-countdown small{display:block;font-size:8px;color:#6b7280;letter-spacing:.15em;font-weight:400;margin-top:2px}
+
+  /* ── Canvas ── */
+  #canvasWrap{position:relative;flex:1;min-height:0;background:#16191f;border:1px solid #2a2f3a;border-radius:2px;overflow:hidden}
+  #gameCanvas{display:block;width:100%;height:100%;touch-action:none}
+  #toast{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:rgba(14,17,22,.95);border:1px solid #2a2f3a;padding:18px 22px;border-radius:2px;
+    text-align:center;display:none;min-width:200px;z-index:10;
+  }
+  #toast.show{display:block}
+  #toast.win{border-color:#00d4aa}
+  #toast.lose{border-color:#ff3b30}
+  #toast h2{font-size:18px;letter-spacing:.1em;margin-bottom:6px;text-transform:uppercase}
+  #toast.win h2{color:#00d4aa}
+  #toast.lose h2{color:#ff3b30}
+  #toast p{font-size:11px;color:#9ca3af}
+
+  /* ── Options ── */
+  #options{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;flex-shrink:0}
+  .opt-btn{
+    background:#1a1d24;border:1px solid #2a2f3a;border-radius:2px;
+    padding:10px 4px;cursor:grab;font-family:inherit;color:#e8e6df;
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    transition:transform .08s,border-color .15s,background .15s,opacity .15s;
+    touch-action:none;  /* let pointer events handle drag, suppress scrolling */
+    user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+  }
+  .opt-btn:active{cursor:grabbing}
+  .opt-btn.dragging{opacity:.35;border-color:#ffb627}
+  .opt-btn svg{display:block;pointer-events:none}
+  .opt-btn .opt-label{font-size:9px;letter-spacing:.1em;color:#6b7280;text-transform:uppercase;pointer-events:none}
+
+  /* ── Drag ghost (the shape that follows finger/cursor) ── */
+  .drag-ghost{
+    position:fixed;pointer-events:none;z-index:1000;
+    width:60px;height:60px;
+    display:flex;align-items:center;justify-content:center;
+    filter:drop-shadow(0 6px 12px rgba(0,0,0,.6));
+    transform:translate(-50%,-50%) scale(1.15);
+    transition:transform .12s ease;
+  }
+  .drag-ghost.over-canvas{transform:translate(-50%,-50%) scale(1.3)}
+
+  /* ── Bottom row ── */
+  #bottom-row{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;font-size:10px;color:#6b7280}
+  #hint{letter-spacing:.05em}
+  #btn-restart{
+    background:transparent;border:1px solid #2a2f3a;color:#9ca3af;
+    padding:6px 12px;border-radius:2px;cursor:pointer;font-family:inherit;
+    font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  }
+  #btn-restart:hover{border-color:#ffb627;color:#ffb627}
+  #btn-restart:active{background:#241e10}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div class="hud-row">
+    <div>STATUS&nbsp;<span class="v" id="solved">0</span><span style="color:#3a3f4a">/10 PROBLEMS</span></div>
+    <div>DROP&nbsp;<span class="v" id="drops">0</span></div>
+  </div>
+  <div id="problem-card">
+    <div id="problem-shape"></div>
+    <div id="problem-info">
+      <div id="problem-label">INCOMING THREAT</div>
+      <div id="problem-desc">—</div>
+    </div>
+    <div id="problem-countdown">10<small>DROPS</small></div>
+  </div>
+</div>
+
+<div id="options">
+  <button class="opt-btn" data-idx="0"></button>
+  <button class="opt-btn" data-idx="1"></button>
+  <button class="opt-btn" data-idx="2"></button>
+</div>
+
+<div id="canvasWrap">
+  <canvas id="gameCanvas"></canvas>
+  <div id="toast">
+    <h2 id="toast-title">—</h2>
+    <p id="toast-sub">—</p>
+  </div>
+</div>
+
+<div id="bottom-row">
+  <div id="hint">Kéo loại bạn muốn xuống sân để thả · Chạm vật phẩm để dùng</div>
+  <button id="btn-restart" onclick="restart()">Reset</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────────────────────
+const {Engine,Bodies,Body,World} = Matter;
+
+const SYSTEMS = [
+  { name:'Zombie',  shape:'circle',    label:'Đại Dịch Zombie',  threat:'Bùng phát',  cure:'Vắc-xin' },
+  { name:'Meteor',  shape:'oval',      label:'Thiên Thạch',      threat:'Va chạm',    cure:'Tên lửa chặn' },
+  { name:'Nuclear', shape:'rtriangle', label:'Hạt Nhân',         threat:'Phóng xạ',   cure:'Hầm trú ẩn' },
+];
+
+// 10 màu mỗi system, low → high tier (nhẹ/an toàn → dữ dội/nguy hiểm)
+const TIER_COLORS = [
+  // Zombie circles: pale lab green → toxic → bloody → mutated purple
+  ['#a8d5a2','#7cc174','#56ad4a','#8aba31','#c4c733','#e8a82a','#e07229','#cc3a2a','#8b1e1e','#4a1248'],
+  // Meteor squares: stone → heated → molten → white-hot
+  ['#cdb89a','#a89178','#876d4f','#6b4d2e','#a05a25','#d4761c','#ff6f00','#ff3815','#c41510','#ffe066'],
+  // Nuclear triangles: pale cyan → indigo → magenta → radioactive yellow
+  ['#a8d4e8','#7cb8db','#5a96c4','#5868b8','#6a4ca8','#9132b0','#c81fc4','#76ff03','#caf94e','#fff200'],
+];
+
+const PROBLEM_WINDOW = 10;    // drops per problem
+const TARGET_PROBLEMS = 10;   // win condition
+const FIRST_PROBLEM_TIER = 3; // game opens with a tier-3 threat
+
+// Tier-1..10 radii (pre-scale). Sizes match Dogpile's first 10 dog tiers
+// exactly — gentle near-linear growth so all 10 tiers fit comfortably on
+// canvas. Replaces the previous BASE_R × 2^(tier-1) scheme.
+const TIER_RADII = [14, 18, 22, 26, 30, 35, 40, 45, 50, 56];
+
+// Dynamic spawn pool: smaller tiers dominate early levels; the pool gradually
+// opens up to include bigger tiers as the player completes more problems.
+// `lvl` is read from problemsSolved so each solve nudges the difficulty.
+const SPAWN_POOLS = [
+  [1,1,1,2,2,2,3],          // lvl 0-1: 43% T1, 43% T2, 14% T3
+  [1,1,1,2,2,3,3,4],        // lvl 2-3: adds T4 sparingly
+  [1,1,2,2,3,3,4,4,5],      // lvl 4-5: full T1-T5
+  [1,2,2,3,3,4,4,5,5],      // lvl 6+:  late game, less T1, more high
+];
+function spawnPoolForLevel(){
+  if(problemsSolved < 2)  return SPAWN_POOLS[0];
+  if(problemsSolved < 4)  return SPAWN_POOLS[1];
+  if(problemsSolved < 6)  return SPAWN_POOLS[2];
+  return SPAWN_POOLS[3];
+}
+function randTier(){
+  const pool = spawnPoolForLevel();
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// Each shape has ONE physics body (single primitive — circle/ellipse/rounded-tri)
+// for smooth Dogpile-style sliding, plus a list of VISUAL decorations rendered
+// inside the body. Decorations are a MIX of shapes (circles + ovals + triangles)
+// so each system reads as a small constructed character rather than a flat shape.
+// Decorations rotate with the body but do NOT participate in physics.
+const SHAPE_DEFS = {
+  // Zombie — mutated cell: lesions, organic streaks, small horns
+  0: {
+    physics: { shape:'circle', r: 1.0 },
+    decorations: [
+      { shape:'circle',   x:  0.40, y: -0.38, r:  0.22 },
+      { shape:'circle',   x: -0.45, y:  0.20, r:  0.28 },
+      { shape:'oval',     x:  0.25, y:  0.52, rx: 0.22, ry: 0.13 },
+      { shape:'triangle', x: -0.18, y: -0.55, r:  0.13, angle:  0.3 },
+      { shape:'triangle', x:  0.55, y:  0.20, r:  0.10, angle: -0.8 },
+    ],
+  },
+  // Meteor — rocky chunk: craters and shattered shards
+  1: {
+    physics: { shape:'ellipse', rx: 1.25, ry: 0.85 },
+    decorations: [
+      { shape:'oval',     x: -0.62, y: -0.18, rx: 0.24, ry: 0.15 },
+      { shape:'oval',     x:  0.65, y:  0.20, rx: 0.22, ry: 0.13 },
+      { shape:'triangle', x:  0.12, y: -0.40, r:  0.14, angle:  1.2 },
+      { shape:'triangle', x: -0.10, y:  0.42, r:  0.12, angle: -2.4 },
+      { shape:'circle',   x:  0.42, y: -0.32, r:  0.06 },
+    ],
+  },
+  // Nuclear — atomic core: inverted nucleus triangle, electrons, orbital
+  2: {
+    physics: { shape:'rtriangle', r: 1.0, chamfer: 0.42 },
+    decorations: [
+      { shape:'triangle', x:  0.00, y:  0.05, r:  0.32, angle: Math.PI },  // inverted nucleus
+      { shape:'circle',   x:  0.00, y: -0.50, r:  0.12 },                  // top electron
+      { shape:'circle',   x:  0.46, y:  0.28, r:  0.12 },                  // BR electron
+      { shape:'circle',   x: -0.46, y:  0.28, r:  0.12 },                  // BL electron
+      { shape:'oval',     x:  0.00, y:  0.05, rx: 0.55, ry: 0.10 },        // orbital path
+    ],
+  },
+};
+function darken(hex, amt=0.5){
+  const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+  if(!m) return '#000';
+  const r=parseInt(m[1],16),g=parseInt(m[2],16),b=parseInt(m[3],16);
+  return '#'+[r,g,b].map(c=>Math.max(0,Math.floor(c*amt)).toString(16).padStart(2,'0')).join('');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+let engine,world;
+let items=[];                 // each: {body,type,tier,born,merging}
+let totalDrops=0;
+let problemsSolved=0;
+let currentProblem=null;      // {type,tier}
+let nextDeadline=PROBLEM_WINDOW;
+let maxTierByType=[0,0,0];
+let currentOptions=[];        // 3 items {type,tier}
+let dragState=null;           // {idx, opt, ghost:DOM el, overCanvas:bool} during active drag
+let mouseX=0, mouseY=0;
+let gameOver=false, gameWon=false;
+let cooldown=0;
+
+let CW,CH,SCALE,SPAWN_Y;
+let walls=[];
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIZING
+// ─────────────────────────────────────────────────────────────────────────────
+function tierR(tier){ return TIER_RADII[tier-1] * SCALE; }
+
+function resize(){
+  const wrap = document.getElementById('canvasWrap');
+  CW = wrap.clientWidth  || window.innerWidth-16;
+  CH = wrap.clientHeight || 400;
+  SCALE = Math.max(0.7, CW/340);    // matches Dogpile reference scaling
+  SPAWN_Y = Math.round(50 * SCALE); // pushed down so tier-1 preview clears the top edge
+  canvas.width  = CW;
+  canvas.height = CH;
+}
+
+function buildWalls(){
+  if(walls.length) walls.forEach(w=>World.remove(world,w));
+  const o={isStatic:true,friction:0.6,restitution:0.15};
+  walls=[
+    Bodies.rectangle(CW/2, CH+30, CW, 60, o),       // floor
+    Bodies.rectangle(-30, CH/2, 60, CH*3, o),       // left
+    Bodies.rectangle(CW+30, CH/2, 60, CH*3, o),     // right
+  ];
+  World.add(world, walls);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PHYSICS BODY FACTORY
+// One single primitive per item (NOT a compound). This is what makes Dogpile
+// feel smooth — no compound geometry to catch on neighbors. Visual ornaments
+// are rendered separately at draw time.
+// ─────────────────────────────────────────────────────────────────────────────
+function makeBody(x, y, type, tier){
+  const r = tierR(tier);
+  // Physics constants mirror Dogpile exactly so the feel matches.
+  const opts = {
+    restitution: 0.52,
+    friction:    0.48,
+    frictionAir: 0.02,
+    density:     0.002,
+    label:       'item',
+  };
+  const def = SHAPE_DEFS[type];
+  let body;
+  if(def.physics.shape === 'circle'){
+    body = Bodies.circle(x, y, def.physics.r * r, opts);
+  } else if(def.physics.shape === 'ellipse'){
+    // True ellipse: start as a 24-sided polygon and squash it horizontally.
+    // No flat sides → slides as smoothly as a circle.
+    const ry = def.physics.ry * r;
+    body = Bodies.polygon(x, y, 24, ry, opts);
+    Body.scale(body, def.physics.rx / def.physics.ry, 1);
+  } else { // rtriangle — chamfered heavily so corners are nearly arcs
+    const cham = def.physics.chamfer;
+    const tr = def.physics.r * r * (1 + cham * 0.35); // visual size compensation
+    body = Bodies.polygon(x, y, 3, tr, {
+      ...opts,
+      chamfer: { radius: def.physics.r * r * cham },
+    });
+  }
+  return body;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SPAWN
+// effectiveSpawnY adjusts where a new body lands so a large-tier spawn
+// (T4/T5) isn't placed with its top above the canvas — we push the center
+// down enough that the whole body is visible from the start.
+// ─────────────────────────────────────────────────────────────────────────────
+function effectiveSpawnY(tier){
+  const r = tierR(tier);
+  // Default: sit just above the spawn line (Dogpile pattern).
+  // Floor: keep the whole body inside the canvas (top edge clear by 4px).
+  return Math.max(r + 4, SPAWN_Y);
+}
+
+function spawn(x, type, tier, fromMerge=false){
+  const r = tierR(tier);
+  const yStart = fromMerge ? x.y : effectiveSpawnY(tier);
+  const xStart = fromMerge ? x.x : x;
+  const body = makeBody(xStart, yStart, type, tier);
+  Body.setVelocity(body, {x:0, y:0});
+  const item = { body, type, tier, born:Date.now()+(fromMerge?160:0), merging:false };
+  body.gameItem = item;
+  World.add(world, body);
+  items.push(item);
+  if(tier > maxTierByType[type]) maxTierByType[type] = tier;
+  return item;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MERGES
+// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// MERGES — uses matter.js's collision pairs (works for any single-body shape).
+// ─────────────────────────────────────────────────────────────────────────────
+function checkMerges(){
+  const pairs = engine.pairs.list;
+  const now = Date.now();
+  for(const pair of pairs){
+    if(!pair.isActive) continue;
+    const a = pair.bodyA.gameItem;
+    const b = pair.bodyB.gameItem;
+    if(!a || !b) continue;                  // one side is a wall
+    if(a.merging || b.merging) continue;
+    if(a.type !== b.type || a.tier !== b.tier) continue;
+    if(a.tier >= 10) continue;
+    if(now - a.born < 160 || now - b.born < 160) continue;
+    doMerge(a, b);
+    return;
+  }
+}
+
+function doMerge(a,b){
+  a.merging=b.merging=true;
+  const mx=(a.body.position.x+b.body.position.x)/2;
+  const my=(a.body.position.y+b.body.position.y)/2;
+  const newTier = a.tier+1;
+  const vx = (a.body.velocity.x+b.body.velocity.x)*0.3;
+  const vy = (a.body.velocity.y+b.body.velocity.y)*0.3 - 1.2;
+  // Remove old
+  World.remove(world, a.body); World.remove(world, b.body);
+  items = items.filter(x=>x!==a && x!==b);
+  // Spawn new at midpoint
+  const item = spawn({x:mx,y:my}, a.type, newTier, true);
+  Body.setVelocity(item.body, {x:vx, y:vy});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROBLEM SYSTEM
+// ─────────────────────────────────────────────────────────────────────────────
+// Generate the data for a new problem (type + required tier).
+// Splitting this out from "reveal" so we can DELAY showing it to the player
+// until there are exactly PROBLEM_WINDOW drops left before its deadline.
+function generateProblemData(){
+  const type = Math.floor(Math.random()*3);
+  let tier;
+  const isFirstProblem = problemsSolved === 0 && maxTierByType.every(t => t === 0);
+  if(isFirstProblem){
+    tier = FIRST_PROBLEM_TIER;
+  } else {
+    // required tier = max(1, maxTier) + random(0..1), capped at 10
+    const base = Math.max(1, maxTierByType[type]);
+    tier = Math.min(10, base + (Math.random()<0.5 ? 0 : 1));
+  }
+  return { type, tier };
+}
+
+// Reveal the next problem only when totalDrops has reached
+// (nextDeadline - PROBLEM_WINDOW), i.e. exactly 10 drops remain.
+// For problem #1 the threshold is 0 → reveals immediately on game start.
+// If the player solves early, currentProblem stays null during the rest window.
+function maybeRevealProblem(){
+  if(currentProblem || gameOver || gameWon) return;
+  if(problemsSolved >= TARGET_PROBLEMS) return;
+  const revealAt = nextDeadline - PROBLEM_WINDOW;
+  if(totalDrops >= revealAt){
+    currentProblem = generateProblemData();
+    updateProblemUI();
+    updateOptionsUI();
+  }
+}
+
+function trySolve(item){
+  if(!currentProblem || gameOver || gameWon) return false;
+  if(item.type !== currentProblem.type) return false;
+  if(item.tier < currentProblem.tier) return false;
+  // CONSUME — clicking to use an item does NOT increment totalDrops (drops are
+  // only consumed by drag-drops via performDrop).
+  World.remove(world, item.body);
+  items = items.filter(x=>x!==item);
+  problemsSolved++;
+  if(problemsSolved >= TARGET_PROBLEMS){
+    gameWon = true;
+    showToast('win','SURVIVED','Bạn đã ngăn chặn ngày tận thế.');
+    currentProblem = null;
+    updateProblemUI();
+    updateOptionsUI();
+    return true;
+  }
+  nextDeadline = (problemsSolved+1) * PROBLEM_WINDOW;
+  // Enter REST PERIOD — next threat doesn't appear until totalDrops reaches
+  // (nextDeadline - PROBLEM_WINDOW). Player can keep dropping to merge in
+  // preparation. maybeRevealProblem() (called from performDrop) handles the reveal.
+  currentProblem = null;
+  deadlineGraceStart = 0;
+  updateProblemUI();
+  updateOptionsUI();
+  return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OPTIONS / DROP
+// ─────────────────────────────────────────────────────────────────────────────
+function generateOptions(){
+  currentOptions = [];
+  // Strategy: ensure some variety. 60% chance "one of each", 40% any 3 random.
+  // Each option's tier is sampled independently from SPAWN_POOL.
+  if(Math.random() < 0.6){
+    const shuffled = [0,1,2].sort(()=>Math.random()-0.5);
+    for(const t of shuffled) currentOptions.push({type: t, tier: randTier()});
+  } else {
+    for(let i=0;i<3;i++) currentOptions.push({type: Math.floor(Math.random()*3), tier: randTier()});
+  }
+  updateOptionsUI();
+}
+
+// Drop is now triggered only by completing a drag onto the canvas.
+// Clicking on an item to solve goes through trySolve() and does NOT call this,
+// so solving NEVER consumes a step.
+function performDrop(rawX, opt){
+  if(gameOver || gameWon || cooldown>0) return false;
+  if(outOfDrops()) return false;
+  const r = tierR(opt.tier);
+  const x = Math.max(r+4, Math.min(CW-r-4, rawX));
+  spawn(x, opt.type, opt.tier, false);
+  totalDrops++;
+  cooldown = 14;
+  document.getElementById('drops').textContent = totalDrops;
+  generateOptions();
+  // After this drop, check whether the next threat should now appear
+  // (it appears once totalDrops reaches `nextDeadline - PROBLEM_WINDOW`).
+  maybeRevealProblem();
+  updateProblemUI();
+  // Deadline enforcement happens in checkDeadline() per-frame so that:
+  //   - Player can take all the time they need to click a solving item
+  //   - In-progress merges have time to resolve before lose triggers
+  return true;
+}
+
+function outOfDrops(){
+  return currentProblem && totalDrops >= nextDeadline;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEADLINE — per-frame check.
+//   * If drops are exhausted but an eligible item is on the board, the player
+//     can take all the time they want to click it (no game-over).
+//   * If no eligible item AND no merges are pending, we give a short grace
+//     (so a just-spawned chain-merge can still produce one), then lose.
+// ─────────────────────────────────────────────────────────────────────────────
+let deadlineGraceStart = 0;
+const DEADLINE_GRACE_MS = 900;
+
+function hasEligibleItem(){
+  if(!currentProblem) return false;
+  for(const it of items){
+    if(it.merging) continue;
+    if(it.type === currentProblem.type && it.tier >= currentProblem.tier) return true;
+  }
+  return false;
+}
+
+function anyMerging(){
+  for(const it of items) if(it.merging) return true;
+  return false;
+}
+
+function anyRecentMergeActivity(){
+  // An item freshly spawned by a merge has born = Date.now()+~200 (scheduled),
+  // so its `born > now` for ~200ms after the merge. We use that window to
+  // detect chain-merge activity that just finished (or is about to finalize).
+  const now = Date.now();
+  for(const it of items){
+    if(it.born > now) return true;
+    if(now - it.born < 250) return true;
+  }
+  return false;
+}
+
+function checkDeadline(){
+  if(gameOver || gameWon || !currentProblem) return;
+  if(totalDrops < nextDeadline){
+    deadlineGraceStart = 0;
+    return;
+  }
+  // Past the deadline. Player may still solve as long as they have something usable.
+  if(hasEligibleItem()){
+    deadlineGraceStart = 0;
+    return;
+  }
+  // No solver right now. Wait for any in-flight merges / freshly-spawned bodies
+  // that might still produce one.
+  if(anyMerging() || anyRecentMergeActivity()){
+    deadlineGraceStart = Date.now();
+    return;
+  }
+  if(deadlineGraceStart === 0){
+    deadlineGraceStart = Date.now();
+  } else if(Date.now() - deadlineGraceStart > DEADLINE_GRACE_MS){
+    gameOver = true;
+    showToast('lose','MISSION FAILED', SYSTEMS[currentProblem.type].label + ' không được ngăn chặn.');
+    updateOptionsUI();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DRAG STATE — drag an option down into the canvas to drop it
+// ─────────────────────────────────────────────────────────────────────────────
+function startDrag(idx, clientX, clientY){
+  if(dragState) return false;
+  if(gameOver || gameWon || cooldown>0 || outOfDrops()) return false;
+  const opt = currentOptions[idx];
+  if(!opt) return false;
+  const ghost = document.createElement('div');
+  ghost.className = 'drag-ghost';
+  ghost.innerHTML = shapeSVG(opt.type, opt.tier, 52);
+  ghost.style.left = clientX + 'px';
+  ghost.style.top  = clientY + 'px';
+  document.body.appendChild(ghost);
+  dragState = { idx, opt, ghost, overCanvas:false };
+  // Visual feedback on the source button
+  document.querySelector(`.opt-btn[data-idx="${idx}"]`).classList.add('dragging');
+  return true;
+}
+
+function moveDrag(clientX, clientY){
+  if(!dragState) return;
+  dragState.ghost.style.left = clientX + 'px';
+  dragState.ghost.style.top  = clientY + 'px';
+  const r = canvas.getBoundingClientRect();
+  const overCanvas = clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+  if(overCanvas){
+    mouseX = (clientX - r.left) * (CW / r.width);
+  }
+  if(overCanvas !== dragState.overCanvas){
+    dragState.overCanvas = overCanvas;
+    dragState.ghost.classList.toggle('over-canvas', overCanvas);
+  }
+}
+
+function endDrag(clientX, clientY){
+  if(!dragState) return;
+  const r = canvas.getBoundingClientRect();
+  const overCanvas = clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+  document.body.removeChild(dragState.ghost);
+  document.querySelector(`.opt-btn[data-idx="${dragState.idx}"]`).classList.remove('dragging');
+  const opt = dragState.opt;
+  dragState = null;
+  if(overCanvas){
+    const x = (clientX - r.left) * (CW / r.width);
+    performDrop(x, opt);
+  }
+}
+
+function cancelDrag(){
+  if(!dragState) return;
+  try { document.body.removeChild(dragState.ghost); } catch(_) {}
+  document.querySelector(`.opt-btn[data-idx="${dragState.idx}"]`).classList.remove('dragging');
+  dragState = null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HIT TESTING — single body, generous circular hit area based on bounding extent
+// ─────────────────────────────────────────────────────────────────────────────
+function pointInItem(px, py, item){
+  const b = item.body;
+  const dx = px - b.position.x;
+  const dy = py - b.position.y;
+  const r = tierR(item.tier);
+  const def = SHAPE_DEFS[item.type];
+  let maxR;
+  if(def.physics.shape === 'ellipse'){
+    maxR = Math.max(def.physics.rx, def.physics.ry) * r;
+  } else if(def.physics.shape === 'rtriangle'){
+    maxR = def.physics.r * r * (1 + def.physics.chamfer * 0.35);
+  } else {
+    maxR = def.physics.r * r;
+  }
+  return (dx*dx + dy*dy) < maxR * maxR * 1.1;
+}
+
+function onCanvasTap(px, py){
+  if(gameOver || gameWon) return;
+  // Tap on an item = attempt to solve (consume it)
+  for(let i=items.length-1;i>=0;i--){
+    if(pointInItem(px,py,items[i])){
+      if(trySolve(items[i])) return;
+      flashIneligible(items[i]);
+      return;
+    }
+  }
+  // Empty tap: do nothing (drops only happen via drag)
+}
+
+let flashItem = null, flashUntil = 0;
+function flashIneligible(item){ flashItem = item; flashUntil = Date.now()+250; }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DRAW
+// Each item: trace the single physics primitive, then draw decoration spots
+// in the body's local frame (so they rotate with it). Tier number stays
+// upright on top.
+// ─────────────────────────────────────────────────────────────────────────────
+function tracePrimitive(c, def, r){
+  c.beginPath();
+  if(def.physics.shape === 'circle'){
+    c.arc(0, 0, def.physics.r * r, 0, Math.PI*2);
+  } else if(def.physics.shape === 'ellipse'){
+    c.ellipse(0, 0, def.physics.rx * r, def.physics.ry * r, 0, 0, Math.PI*2);
+  } else { // rtriangle
+    const cham = def.physics.chamfer;
+    const tr = def.physics.r * r * (1 + cham * 0.35);
+    const cr = def.physics.r * r * cham;
+    const v0x = 0,           v0y = -tr;
+    const v1x =  tr * 0.866, v1y =  tr * 0.5;
+    const v2x = -tr * 0.866, v2y =  tr * 0.5;
+    c.moveTo((v2x + v0x)/2, (v2y + v0y)/2);
+    c.arcTo(v0x, v0y, v1x, v1y, cr);
+    c.arcTo(v1x, v1y, v2x, v2y, cr);
+    c.arcTo(v2x, v2y, v0x, v0y, cr);
+    c.closePath();
+  }
+}
+
+function drawBodyWithDecorations(c, type, tier, angle, alpha, glow){
+  const r = tierR(tier);
+  const fill = TIER_COLORS[type][tier - 1];
+  const stroke = darken(fill, 0.55);
+  const def = SHAPE_DEFS[type];
+
+  c.save();
+  c.globalAlpha = alpha;
+  c.rotate(angle);
+  if(glow){
+    c.shadowColor = '#ffb627';
+    c.shadowBlur = 18;
+  }
+  // Main body
+  c.fillStyle = fill;
+  c.strokeStyle = stroke;
+  c.lineWidth = Math.max(1.4, r * 0.05);
+  tracePrimitive(c, def, r);
+  c.fill();
+  c.stroke();
+  c.shadowBlur = 0;
+
+  // Clip to body so decorations never visually escape the shape
+  c.save();
+  tracePrimitive(c, def, r);
+  c.clip();
+  const decFill = darken(fill, 0.55);
+  const decStroke = darken(fill, 0.30);
+  c.fillStyle = decFill;
+  c.strokeStyle = decStroke;
+  c.lineWidth = Math.max(0.8, r * 0.025);
+  for(const dec of def.decorations){
+    c.save();
+    c.translate(dec.x * r, dec.y * r);
+    if(dec.angle) c.rotate(dec.angle);
+    c.beginPath();
+    if(dec.shape === 'circle'){
+      c.arc(0, 0, dec.r * r, 0, Math.PI*2);
+    } else if(dec.shape === 'oval'){
+      c.ellipse(0, 0, dec.rx * r, dec.ry * r, 0, 0, Math.PI*2);
+    } else if(dec.shape === 'triangle'){
+      const tr = dec.r * r;
+      c.moveTo(0, -tr);
+      c.lineTo(tr * 0.866, tr * 0.5);
+      c.lineTo(-tr * 0.866, tr * 0.5);
+      c.closePath();
+    }
+    c.fill();
+    c.stroke();
+    c.restore();
+  }
+  c.restore();
+
+  // Tier number upright on top
+  c.rotate(-angle);
+  c.fillStyle = tier <= 4 ? darken(fill, 0.20) : 'rgba(255,255,255,0.98)';
+  c.font = `700 ${Math.max(10, r * 0.65)}px 'SF Mono', 'Roboto Mono', monospace`;
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  const ty = (def.physics.shape === 'rtriangle') ? r * 0.08 : 0;
+  c.fillText(String(tier), 0, ty);
+  c.restore();
+}
+
+function drawItem(c, item, alpha, glow){
+  c.save();
+  c.translate(item.body.position.x, item.body.position.y);
+  drawBodyWithDecorations(c, item.type, item.tier, item.body.angle, alpha, glow);
+  c.restore();
+}
+
+// Static draw for the drag preview (no body, angle=0)
+function drawCompoundAt(c, type, tier, x, y, alpha){
+  c.save();
+  c.translate(x, y);
+  drawBodyWithDecorations(c, type, tier, 0, alpha, false);
+  c.restore();
+}
+
+function drawSpawnLine(){
+  ctx.strokeStyle = 'rgba(255,182,39,0.12)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(4,SPAWN_Y); ctx.lineTo(CW-4,SPAWN_Y); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawFrame(){
+  ctx.clearRect(0,0,CW,CH);
+  // background
+  ctx.fillStyle = '#16191f'; ctx.fillRect(0,0,CW,CH);
+  // grid texture (very subtle)
+  ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<CH;i+=20){ ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(CW,i); ctx.stroke(); }
+  drawSpawnLine();
+
+  // Items
+  for(const it of items){
+    const eligible = currentProblem
+      && it.type === currentProblem.type
+      && it.tier >= currentProblem.tier;
+    const flash = (flashItem === it && Date.now() < flashUntil);
+    drawItem(ctx, it, flash?0.5:1, eligible);
+  }
+  if(flashItem && Date.now() > flashUntil) flashItem = null;
+
+  // Drop indicator while dragging an option over the canvas
+  if(dragState && dragState.overCanvas && !gameOver && !gameWon){
+    const opt = dragState.opt;
+    const r = tierR(opt.tier);
+    const px = Math.max(r+4, Math.min(CW-r-4, mouseX || CW/2));
+    const py = effectiveSpawnY(opt.tier);   // match the actual spawn position
+    drawCompoundAt(ctx, opt.type, opt.tier, px, py, 0.55);
+    ctx.strokeStyle = 'rgba(255,182,39,0.35)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,5]);
+    ctx.beginPath(); ctx.moveTo(px, py + r); ctx.lineTo(px, CH); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UI UPDATES
+// ─────────────────────────────────────────────────────────────────────────────
+function shapeSVG(type, tier, size=22){
+  const fill = TIER_COLORS[type][tier-1];
+  const stroke = darken(fill, 0.5);
+  const def = SHAPE_DEFS[type];
+  const cx = size/2, cy = size/2;
+  // Compute size scale so the body fits in the box
+  let maxExtent;
+  if(def.physics.shape === 'circle'){
+    maxExtent = def.physics.r;
+  } else if(def.physics.shape === 'ellipse'){
+    maxExtent = Math.max(def.physics.rx, def.physics.ry);
+  } else {
+    maxExtent = def.physics.r * (1 + def.physics.chamfer * 0.35);
+  }
+  const r = (size/2 - 1) / maxExtent;
+  const sw = Math.max(0.8, r * 0.05);
+
+  // Main body shape
+  let main = '';
+  if(def.physics.shape === 'circle'){
+    main = `<circle cx="${cx}" cy="${cy}" r="${def.physics.r * r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+  } else if(def.physics.shape === 'ellipse'){
+    main = `<ellipse cx="${cx}" cy="${cy}" rx="${def.physics.rx * r}" ry="${def.physics.ry * r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/>`;
+  } else { // rtriangle — stroke-linejoin="round" trick for rounded corners
+    const cham = def.physics.chamfer;
+    const tr = def.physics.r * r * (1 + cham * 0.35);
+    const cornerW = def.physics.r * r * cham * 2;
+    const trInner = tr - cornerW/2;
+    const v0 = `${cx},${cy - trInner}`;
+    const v1 = `${cx + trInner*0.866},${cy + trInner*0.5}`;
+    const v2 = `${cx - trInner*0.866},${cy + trInner*0.5}`;
+    main = `<polygon points="${v0} ${v1} ${v2}" fill="${fill}" stroke="${fill}" stroke-width="${cornerW}" stroke-linejoin="round"/>
+            <polygon points="${v0} ${v1} ${v2}" fill="none" stroke="${stroke}" stroke-width="${cornerW + sw}" stroke-linejoin="round" stroke-opacity="0.55"/>`;
+  }
+
+  // Decorations (clipped inside main body via SVG clipPath)
+  const clipId = `clip_${type}_${tier}_${size}`;
+  let clipShape = '';
+  if(def.physics.shape === 'circle'){
+    clipShape = `<circle cx="${cx}" cy="${cy}" r="${def.physics.r * r}"/>`;
+  } else if(def.physics.shape === 'ellipse'){
+    clipShape = `<ellipse cx="${cx}" cy="${cy}" rx="${def.physics.rx * r}" ry="${def.physics.ry * r}"/>`;
+  } else {
+    const cham = def.physics.chamfer;
+    const tr = def.physics.r * r * (1 + cham * 0.35);
+    const v0 = `${cx},${cy - tr}`;
+    const v1 = `${cx + tr*0.866},${cy + tr*0.5}`;
+    const v2 = `${cx - tr*0.866},${cy + tr*0.5}`;
+    clipShape = `<polygon points="${v0} ${v1} ${v2}"/>`;
+  }
+  let decs = '';
+  const decFill = darken(fill, 0.55);
+  const decStroke = darken(fill, 0.30);
+  for(const dec of def.decorations){
+    const dx = cx + dec.x * r;
+    const dy = cy + dec.y * r;
+    if(dec.shape === 'circle'){
+      decs += `<circle cx="${dx}" cy="${dy}" r="${dec.r * r}" fill="${decFill}" stroke="${decStroke}" stroke-width="${sw*0.6}"/>`;
+    } else if(dec.shape === 'oval'){
+      decs += `<ellipse cx="${dx}" cy="${dy}" rx="${dec.rx * r}" ry="${dec.ry * r}" fill="${decFill}" stroke="${decStroke}" stroke-width="${sw*0.6}"/>`;
+    } else if(dec.shape === 'triangle'){
+      const tr = dec.r * r;
+      const angDeg = (dec.angle || 0) * 180 / Math.PI;
+      decs += `<polygon points="0,${-tr} ${tr*0.866},${tr*0.5} ${-tr*0.866},${tr*0.5}"
+        transform="translate(${dx} ${dy}) rotate(${angDeg})"
+        fill="${decFill}" stroke="${decStroke}" stroke-width="${sw*0.6}" stroke-linejoin="round"/>`;
+    }
+  }
+
+  // Tier number — slight y offset on triangle
+  const ty = (def.physics.shape === 'rtriangle') ? cy + size*0.05 : cy;
+  const textColor = tier <= 4 ? darken(fill, 0.2) : '#fff';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <defs><clipPath id="${clipId}">${clipShape}</clipPath></defs>
+    ${main}
+    <g clip-path="url(#${clipId})">${decs}</g>
+    <text x="${cx}" y="${ty}" text-anchor="middle" dominant-baseline="central"
+      font-family="SF Mono,Roboto Mono,monospace" font-weight="700"
+      font-size="${size*0.38}" fill="${textColor}">${tier}</text>
+  </svg>`;
+}
+
+function updateOptionsUI(){
+  const disabled = outOfDrops() || gameOver || gameWon;
+  for(let i=0;i<3;i++){
+    const btn = document.querySelector(`.opt-btn[data-idx="${i}"]`);
+    const opt = currentOptions[i];
+    if(!opt){ btn.innerHTML=''; continue; }
+    btn.innerHTML = shapeSVG(opt.type, opt.tier, 38)
+      + `<div class="opt-label">${SYSTEMS[opt.type].name}</div>`;
+    btn.disabled = disabled;
+    btn.style.opacity = disabled ? 0.3 : 1;
+    btn.style.cursor = disabled ? 'not-allowed' : 'grab';
+  }
+  // hint message
+  const hint = document.getElementById('hint');
+  if(gameOver || gameWon) hint.textContent = '';
+  else if(outOfDrops()) hint.textContent = 'HẾT LƯỢT — chạm vật phẩm phát sáng để dùng!';
+  else hint.textContent = 'Kéo loại bạn muốn xuống sân để thả · Chạm vật phẩm để dùng';
+}
+
+function updateProblemUI(){
+  const card = document.getElementById('problem-card');
+  const shape = document.getElementById('problem-shape');
+  const desc = document.getElementById('problem-desc');
+  const cd = document.getElementById('problem-countdown');
+  document.getElementById('solved').textContent = problemsSolved;
+  if(!currentProblem){
+    card.classList.add('idle');
+    card.classList.remove('urgent');
+    card.style.setProperty('--accent', '#3a3f4a');
+    cd.style.color = '#6b7280';
+    shape.innerHTML = '';
+    if(gameWon){
+      desc.textContent = 'Tận thế đã được ngăn chặn';
+      cd.innerHTML = '—';
+    } else if(gameOver){
+      desc.textContent = '—';
+      cd.innerHTML = '—';
+    } else {
+      // Rest period — show how many drops until the next threat appears
+      const dropsUntilReveal = Math.max(0, (nextDeadline - PROBLEM_WINDOW) - totalDrops);
+      desc.textContent = 'Tạm yên · Mối nguy kế tiếp đang đến';
+      cd.innerHTML = `${dropsUntilReveal}<small>UNTIL NEXT</small>`;
+    }
+    return;
+  }
+  card.classList.remove('idle');
+  shape.innerHTML = shapeSVG(currentProblem.type, currentProblem.tier, 40);
+  desc.textContent = `${SYSTEMS[currentProblem.type].label} · Cấp ${currentProblem.tier}`;
+  const remaining = nextDeadline - totalDrops;
+  cd.innerHTML = `${remaining}<small>DROPS</small>`;
+  // accent color based on urgency
+  let accent = '#ffb627';
+  if(remaining<=3) accent='#ff3b30';
+  else if(remaining<=6) accent='#ff9500';
+  card.style.setProperty('--accent', accent);
+  card.classList.toggle('urgent', remaining<=3);
+  cd.style.color = accent;
+}
+
+function showToast(kind, title, sub){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-sub').textContent = sub;
+  t.className = 'show ' + kind;
+}
+function hideToast(){ document.getElementById('toast').className = ''; }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EVENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Canvas: ONLY for tapping items to solve. Dropping is handled by drag-and-drop.
+// We use the same pointer-event flow so a drag from an option button doesn't
+// accidentally register as a canvas tap.
+canvas.addEventListener('pointerdown', e=>{
+  // Ignore if a drag is in progress — that release will be handled by the
+  // option button's captured pointer events.
+  if(dragState) return;
+  if(gameOver || gameWon) return;
+  const r = canvas.getBoundingClientRect();
+  const x = (e.clientX-r.left) * (CW/r.width);
+  const y = (e.clientY-r.top)  * (CH/r.height);
+  onCanvasTap(x, y);
+});
+
+// Option buttons: pointerdown → start drag, with capture so subsequent
+// move/up events come back to the button even when the finger is over canvas.
+document.querySelectorAll('.opt-btn').forEach(btn=>{
+  btn.addEventListener('pointerdown', e=>{
+    if(btn.disabled) return;
+    e.preventDefault();
+    const idx = parseInt(btn.dataset.idx);
+    if(startDrag(idx, e.clientX, e.clientY)){
+      try { btn.setPointerCapture(e.pointerId); } catch(_) {}
+    }
+  });
+  btn.addEventListener('pointermove', e=>{
+    if(!dragState || dragState.idx !== parseInt(btn.dataset.idx)) return;
+    e.preventDefault();
+    moveDrag(e.clientX, e.clientY);
+  });
+  btn.addEventListener('pointerup', e=>{
+    if(!dragState || dragState.idx !== parseInt(btn.dataset.idx)) return;
+    e.preventDefault();
+    try { btn.releasePointerCapture(e.pointerId); } catch(_) {}
+    endDrag(e.clientX, e.clientY);
+  });
+  btn.addEventListener('pointercancel', e=>{
+    if(!dragState || dragState.idx !== parseInt(btn.dataset.idx)) return;
+    cancelDrag();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOOP / INIT
+// ─────────────────────────────────────────────────────────────────────────────
+function initPhysics(){
+  engine = Engine.create({
+    gravity: {y: 1.5},
+    positionIterations: 10,
+    velocityIterations: 8,
+  });
+  world = engine.world;
+  walls = [];
+  buildWalls();
+}
+
+let lastT = 0;
+function loop(ts){
+  if(!gameOver && !gameWon){
+    const dt = lastT ? Math.min(ts-lastT, 32) : 16;
+    lastT = ts;
+    const steps = Math.ceil(dt/16);
+    for(let i=0;i<steps;i++){
+      Engine.update(engine, 16);
+      const maxSpd = 20*SCALE;
+      for(const it of items){
+        const v = it.body.velocity;
+        const sp = Math.sqrt(v.x*v.x+v.y*v.y);
+        if(sp > maxSpd) Body.setVelocity(it.body,{x:v.x*maxSpd/sp, y:v.y*maxSpd/sp});
+      }
+    }
+    checkMerges();
+    checkDeadline();
+    if(cooldown>0) cooldown--;
+  }
+  drawFrame();
+  requestAnimationFrame(loop);
+}
+
+function restart(){
+  if(engine) Engine.clear(engine);
+  items = [];
+  totalDrops = 0;
+  problemsSolved = 0;
+  maxTierByType = [0,0,0];
+  nextDeadline = PROBLEM_WINDOW;
+  gameOver = false; gameWon = false;
+  cooldown = 0; lastT = 0;
+  deadlineGraceStart = 0;
+  currentProblem = null;
+  cancelDrag();
+  hideToast();
+  resize();
+  mouseX = CW/2;
+  initPhysics();
+  maybeRevealProblem();   // first problem appears immediately (threshold=0)
+  generateOptions();
+  document.getElementById('drops').textContent = 0;
+}
+
+function boot(){
+  resize();
+  if(CH < 10){ requestAnimationFrame(boot); return; }
+  mouseX = CW/2;
+  initPhysics();
+  maybeRevealProblem();   // first problem appears immediately (threshold=0)
+  generateOptions();
+  loop();
+}
+
+window.addEventListener('resize', ()=>{
+  resize();
+  if(world) buildWalls();
+});
+
+requestAnimationFrame(boot);
+</script>
+</body>
+</html>

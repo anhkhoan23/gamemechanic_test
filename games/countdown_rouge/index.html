@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Đếm Ngược — Prototype</title>
+<style>
+  :root {
+    --bg: #100b08;
+    --surface: #1c1410;
+    --surface-2: #251a14;
+    --paper: #ede0c8;
+    --paper-shadow: #c4b596;
+    --ink: #2a1f15;
+    --ink-light: #5a4a3a;
+    --text: #f0e2cf;
+    --text-dim: #a89580;
+    --text-faint: #6d5d4d;
+    --warning: #ff5a3c;
+    --warning-glow: rgba(255,90,60,0.4);
+    --amber: #ffcf6b;
+    --critical: #ff2010;
+    --divider: #2d2218;
+    --ok: #8aa867;
+    --tier1: #c8b48a;
+    --tier2: #8ab4c8;
+    --tier3: #c8a03c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  button, .card, .pick-card, .substat.clickable, .modal-close, .modal-backdrop{-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+  button:active:not(:disabled), .card:active:not(.empty), .pick-card:active{transform:scale(.97);transition:transform .08s ease}
+  html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",sans-serif;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at top,rgba(255,90,60,.06) 0%,transparent 60%),radial-gradient(ellipse at bottom,rgba(180,60,20,.04) 0%,transparent 60%);pointer-events:none;z-index:0}
+  #game{max-width:780px;margin:0 auto;padding:16px;min-height:100vh;position:relative;z-index:1}
+
+  /* STATUS */
+  .status{background:var(--surface);border:1px solid var(--divider);border-radius:4px;padding:18px 20px 14px;margin-bottom:16px;position:relative;overflow:hidden}
+  .status::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--warning);box-shadow:0 0 12px var(--warning-glow)}
+  .reserve-label{font-size:10px;font-weight:700;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:4px;font-family:"SF Mono",Monaco,monospace}
+  .timer-row{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+  .timer{font-family:"SF Mono",Monaco,monospace;font-size:56px;font-weight:700;color:var(--warning);letter-spacing:-2px;line-height:1;text-shadow:0 0 20px var(--warning-glow);transition:color .3s,text-shadow .3s}
+  .timer .unit{font-size:24px;color:var(--text-dim);text-shadow:none;margin-left:4px;font-weight:500}
+  .timer.warning{color:#ffaa44;text-shadow:0 0 20px rgba(255,170,68,.4)}
+  .timer.critical{color:var(--critical);text-shadow:0 0 24px rgba(255,32,16,.6);animation:pulse .6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+  .stage-track{text-align:right}
+  .stage-track .label{font-size:10px;font-weight:700;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;font-family:"SF Mono",Monaco,monospace;margin-bottom:6px}
+  .stage-dots{display:flex;gap:4px;justify-content:flex-end}
+  .dot{width:10px;height:10px;border:1.5px solid var(--ink-light);border-radius:50%;transition:all .3s}
+  .dot.done{background:var(--text-dim);border-color:var(--text-dim)}
+  .dot.current{background:var(--warning);border-color:var(--warning);box-shadow:0 0 8px var(--warning-glow)}
+  .dot.boss{border-color:var(--warning);border-width:2px;border-radius:2px;transform:rotate(45deg)}
+  .dot.boss.done{background:var(--text-dim);border-color:var(--text-dim)}
+  .dot.boss.current{background:var(--warning);border-color:var(--warning)}
+  .fuel-bar{height:3px;background:var(--divider);margin-top:14px;overflow:hidden}
+  .fuel-bar-fill{height:100%;background:linear-gradient(90deg,var(--critical) 0%,var(--warning) 50%,var(--amber) 100%);transition:width .4s cubic-bezier(.4,0,.2,1)}
+  .substats{display:flex;margin-bottom:16px;background:var(--surface);border:1px solid var(--divider);border-radius:4px;font-family:"SF Mono",Monaco,monospace;font-size:11px}
+  .substat{flex:1;padding:10px 14px;text-align:center;border-right:1px solid var(--divider);transition:background .15s}
+  .substat:last-child{border-right:0}
+  .substat.clickable{cursor:pointer}
+  .substat.clickable:hover{background:var(--surface-2)}
+  .substat .v{display:block;font-size:18px;color:var(--text);font-weight:700;margin-bottom:2px}
+  .substat .k{color:var(--text-faint);text-transform:uppercase;letter-spacing:2px;font-size:9px}
+  .substat .arrow{color:var(--amber);margin-left:2px}
+
+  /* ENCOUNTER */
+  .encounter{background:var(--surface-2);border:1px solid var(--divider);border-radius:4px;padding:20px;margin-bottom:16px;position:relative}
+  .encounter::after{content:'';position:absolute;top:0;right:0;border-top:16px solid var(--warning);border-left:16px solid transparent;opacity:.5}
+  .enc-icon{font-size:32px;margin-bottom:10px;filter:saturate(.8)}
+  .enc-tier{display:inline-block;font-family:"SF Mono",Monaco,monospace;font-size:10px;font-weight:700;color:var(--warning);border:1px solid var(--warning);padding:2px 6px;letter-spacing:1px;margin-bottom:10px}
+  .enc-name{font-size:22px;font-weight:700;margin-bottom:8px;color:var(--text);letter-spacing:-.5px}
+  .enc-desc{color:var(--text-dim);font-size:14px;line-height:1.6}
+
+  /* HAND */
+  .section-label{font-size:10px;text-transform:uppercase;letter-spacing:3px;color:var(--text-faint);font-family:"SF Mono",Monaco,monospace;font-weight:700;margin-bottom:10px;padding:0 2px}
+  .hand{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+
+  .card{background:var(--paper);color:var(--ink);border-radius:3px;padding:12px 10px 10px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;display:flex;flex-direction:column;min-height:160px;position:relative;border:1px solid var(--paper-shadow);box-shadow:0 2px 0 var(--paper-shadow),0 4px 12px rgba(0,0,0,.4);font-family:"SF Mono",Monaco,monospace}
+  .card:hover:not(.empty){transform:translateY(-3px);box-shadow:0 4px 0 var(--paper-shadow),0 8px 20px rgba(0,0,0,.5)}
+  .card.selected{transform:translateY(-6px);border-color:var(--warning);box-shadow:0 6px 0 #a04020,0 10px 24px rgba(255,90,60,.3),inset 0 0 0 2px var(--warning)}
+  .card.selected::before{content:'✓';position:absolute;top:-8px;right:-8px;background:var(--warning);color:white;width:20px;height:20px;border-radius:50%;font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+
+  /* Tier stripe on card top */
+  .card .tier-stripe{position:absolute;top:0;left:0;right:0;height:4px;border-radius:3px 3px 0 0}
+  .card.t1 .tier-stripe{background:var(--tier1)}
+  .card.t2 .tier-stripe{background:var(--tier2)}
+  .card.t3 .tier-stripe{background:var(--tier3)}
+
+  .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;margin-top:6px}
+  .card-cost{font-size:24px;font-weight:800;color:var(--ink);line-height:1;display:flex;align-items:baseline;gap:2px}
+  .card-cost .s{font-size:12px;font-weight:600;color:var(--ink-light)}
+  .tier-badge{font-size:10px;font-weight:800;letter-spacing:1px;padding:2px 5px;border-radius:2px;background:var(--ink);color:var(--paper);font-family:"SF Mono",Monaco,monospace}
+  .card.t1 .tier-badge{background:var(--tier1);color:var(--ink)}
+  .card.t2 .tier-badge{background:var(--tier2);color:var(--ink)}
+  .card.t3 .tier-badge{background:var(--tier3);color:var(--ink)}
+
+  .card-name{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px;line-height:1.2;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+  .card-role{font-size:9px;color:var(--ink-light);margin-bottom:6px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.3}
+  .card-role .main-role{color:var(--ink);font-weight:700}
+  .card-desc{font-size:10px;color:var(--ink-light);flex-grow:1;margin-bottom:8px;line-height:1.4;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+  .card-tags{display:flex;flex-wrap:wrap;gap:3px}
+  .tag{font-size:8px;padding:2px 5px;background:var(--ink);color:var(--paper);border-radius:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;font-family:"SF Mono",Monaco,monospace}
+  .tag.main{background:var(--warning);color:white}
+  .tag.sub{background:var(--ink-light);color:var(--paper)}
+
+  .hand .card.empty{background:transparent;border:1px dashed var(--ink-light);box-shadow:none;cursor:default;display:flex;align-items:center;justify-content:center;color:var(--text-faint);font-size:10px;text-transform:uppercase;letter-spacing:2px;font-family:"SF Mono",Monaco,monospace}
+
+  /* ACTIONS */
+  .actions{display:flex;flex-direction:column;gap:6px}
+  button{background:var(--surface);color:var(--text);border:1px solid var(--divider);border-radius:3px;padding:14px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s ease;font-family:"SF Mono",Monaco,monospace;text-transform:uppercase;letter-spacing:2px;text-align:left;display:flex;justify-content:space-between;align-items:center}
+  button:hover:not(:disabled){border-color:var(--text-dim);background:var(--surface-2)}
+  button:disabled{opacity:.35;cursor:not-allowed}
+  button.primary{background:var(--warning);color:var(--bg);border-color:var(--warning)}
+  button.primary:hover:not(:disabled){background:#ff6e54;border-color:#ff6e54}
+  button.danger{color:#d68080;border-color:#6d3030}
+  button.danger:hover:not(:disabled){background:#2a1818}
+  button.subtle{color:var(--text-dim);background:transparent;border-color:transparent;font-size:11px}
+  button.subtle:hover:not(:disabled){color:var(--text);background:var(--surface)}
+  button .cost{font-size:14px;color:inherit;opacity:.85;text-transform:none;letter-spacing:0;font-weight:800}
+  button.primary .cost{color:var(--bg);opacity:.7}
+
+  /* PICK SCREEN */
+  .pick-screen{padding:20px 0}
+  .pick-header{text-align:center;margin-bottom:24px}
+  .pick-header .eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:4px;color:var(--amber);font-family:"SF Mono",Monaco,monospace;margin-bottom:8px}
+  .pick-header h2{font-size:28px;color:var(--text);letter-spacing:-.5px;margin-bottom:4px}
+  .pick-header .sub{color:var(--text-dim);font-size:13px}
+  .pick-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+  .pick-card{background:var(--paper);color:var(--ink);border:1px solid var(--paper-shadow);border-radius:3px;padding:16px 12px;cursor:pointer;transition:all .2s ease;min-height:180px;display:flex;flex-direction:column;box-shadow:0 2px 0 var(--paper-shadow),0 4px 12px rgba(0,0,0,.4);font-family:"SF Mono",Monaco,monospace;position:relative}
+  .pick-card:hover{transform:translateY(-6px);box-shadow:0 6px 0 var(--paper-shadow),0 10px 24px rgba(0,0,0,.5)}
+  .pick-card .tier-stripe{position:absolute;top:0;left:0;right:0;height:5px;border-radius:3px 3px 0 0}
+  .pick-card.t1 .tier-stripe{background:var(--tier1)}
+  .pick-card.t2 .tier-stripe{background:var(--tier2)}
+  .pick-card.t3 .tier-stripe{background:var(--tier3)}
+
+  /* END SCREEN */
+  .end-screen{padding:60px 20px 40px;text-align:center}
+  .end-screen .eyebrow{font-size:11px;letter-spacing:6px;text-transform:uppercase;color:var(--text-faint);font-family:"SF Mono",Monaco,monospace;margin-bottom:16px}
+  .end-screen h1{font-size:56px;letter-spacing:-2px;margin-bottom:12px;font-weight:800}
+  .end-screen.win h1{color:var(--ok)}
+  .end-screen.lose h1{color:var(--critical)}
+  .end-screen .flavor{color:var(--text-dim);margin:0 auto 32px;max-width:460px;font-size:15px;line-height:1.7}
+  .stats-grid{background:var(--surface);border:1px solid var(--divider);border-radius:4px;padding:20px;margin:24px auto;max-width:460px;display:grid;grid-template-columns:1fr 1fr;gap:16px 24px;text-align:left;font-family:"SF Mono",Monaco,monospace}
+  .stat-row{border-bottom:1px solid var(--divider);padding-bottom:10px}
+  .stat-row:last-child,.stat-row:nth-last-child(2){border-bottom:0;padding-bottom:0}
+  .stat-row .k{font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--text-faint);margin-bottom:4px}
+  .stat-row .v{font-size:22px;color:var(--text);font-weight:700}
+  .end-screen .restart-btn{margin-top:8px;max-width:280px;margin-left:auto;margin-right:auto;justify-content:center}
+
+  /* INTRO */
+  .intro{padding:60px 20px 40px;text-align:center}
+  .intro .eyebrow{font-family:"SF Mono",Monaco,monospace;font-size:11px;letter-spacing:8px;text-transform:uppercase;color:var(--warning);margin-bottom:24px}
+  .intro h1{font-size:72px;letter-spacing:-3px;color:var(--text);margin-bottom:16px;font-weight:800;line-height:.95}
+  .intro h1 .red{color:var(--warning);text-shadow:0 0 32px var(--warning-glow)}
+  .intro .tagline{color:var(--text-dim);font-size:17px;margin-bottom:8px;line-height:1.5}
+  .intro .desc{color:var(--text-faint);font-size:13px;max-width:480px;margin:24px auto 36px;line-height:1.8;font-family:"SF Mono",Monaco,monospace}
+  .intro-actions{display:flex;flex-direction:column;gap:8px;max-width:280px;margin:0 auto}
+  .intro-actions button{justify-content:center}
+
+  /* MODAL */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}
+  .modal{background:var(--surface);border:1px solid var(--divider);border-radius:4px;max-width:560px;width:100%;max-height:85vh;overflow-y:auto;padding:28px}
+  .modal h3{font-size:20px;color:var(--warning);margin-bottom:14px;letter-spacing:-.5px}
+  .modal h4{font-size:11px;text-transform:uppercase;letter-spacing:3px;color:var(--text-dim);margin:18px 0 8px;font-family:"SF Mono",Monaco,monospace}
+  .modal p,.modal li{color:var(--text-dim);font-size:13px;line-height:1.7;margin-bottom:6px}
+  .modal ul{padding-left:18px}
+  .modal-close{margin-top:20px;width:100%;justify-content:center}
+  .milestone{text-align:center}
+  .milestone .icon{font-size:64px;margin-bottom:12px}
+  .milestone h3{font-size:28px;color:var(--amber);margin-bottom:8px;letter-spacing:-.5px}
+  .milestone .sub{color:var(--text-dim);font-size:15px;margin-bottom:8px}
+  .milestone .encourage{color:var(--warning);font-weight:700;font-style:italic;margin-bottom:16px}
+
+  /* DECK MODAL */
+  .deck-list{margin:16px 0;border:1px solid var(--divider);border-radius:4px;overflow:hidden}
+  .deck-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--divider);font-size:13px}
+  .deck-row:last-child{border-bottom:0}
+  .deck-row:nth-child(even){background:var(--surface-2)}
+  .deck-card-name{color:var(--text);font-weight:500}
+  .deck-card-meta{font-size:10px;color:var(--text-faint);font-family:"SF Mono",Monaco,monospace;margin-top:2px}
+  .deck-card-count{font-family:"SF Mono",Monaco,monospace;color:var(--amber);font-weight:700;font-size:16px;min-width:30px;text-align:right}
+  .deck-tier-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .deck-summary{background:var(--surface-2);padding:10px 14px;border-radius:4px;margin-bottom:12px;font-family:"SF Mono",Monaco,monospace;font-size:12px;color:var(--text-dim);display:flex;justify-content:space-between}
+  .deck-summary strong{color:var(--text)}
+
+  /* TIER TABLE in deck modal */
+  .tier-legend{display:flex;gap:16px;margin-bottom:12px;font-family:"SF Mono",Monaco,monospace;font-size:11px;color:var(--text-dim)}
+  .tier-legend span{display:flex;align-items:center;gap:5px}
+  .tl-dot{display:inline-block;width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .slide-in{animation:slideIn .3s cubic-bezier(.2,0,.2,1)}
+  @keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .float-up{position:absolute;pointer-events:none;font-family:"SF Mono",Monaco,monospace;font-weight:800;text-align:center;animation:floatUp 1.5s ease-out forwards;z-index:50}
+  .float-up .num{font-size:28px;color:var(--critical);display:block;text-shadow:0 0 20px rgba(255,32,16,.6)}
+  .float-up.gain .num{color:var(--ok);text-shadow:0 0 20px rgba(138,168,103,.6)}
+  .float-up .label{font-size:11px;color:var(--text);text-transform:uppercase;letter-spacing:2px;margin-top:4px;opacity:.85;display:block}
+  @keyframes floatUp{0%{opacity:0;transform:translate(-50%,10px)}15%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-80px)}}
+
+  /* ========================================
+     MOBILE PORTRAIT — main breakpoint
+     ========================================*/
+  @media(max-width:600px){
+    #game{padding:10px;padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+
+    /* Status */
+    .status{padding:14px 16px 12px;margin-bottom:12px}
+    .reserve-label{font-size:9px;letter-spacing:2px}
+    .timer{font-size:42px;letter-spacing:-1px}
+    .timer .unit{font-size:20px}
+    .stage-track .label{font-size:9px;letter-spacing:2px}
+    .dot{width:9px;height:9px}
+    .fuel-bar{margin-top:12px}
+
+    /* Substats — 4 columns, compact */
+    .substats{margin-bottom:12px}
+    .substat{padding:8px 3px}
+    .substat .v{font-size:15px}
+    .substat .k{font-size:8px;letter-spacing:1.2px}
+
+    /* Encounter */
+    .encounter{padding:16px;margin-bottom:12px}
+    .enc-icon{font-size:28px;margin-bottom:8px}
+    .enc-tier{font-size:9px;padding:2px 5px;margin-bottom:8px}
+    .enc-name{font-size:17px;line-height:1.25;margin-bottom:6px}
+    .enc-desc{font-size:13px;line-height:1.55}
+
+    /* Section labels */
+    .section-label{font-size:9px;letter-spacing:2px;margin-bottom:8px}
+
+    /* Hand cards — compact, hide flavor text */
+    .hand{gap:5px;margin-bottom:12px}
+    .card{min-height:128px;padding:10px 7px 8px}
+    .card .tier-stripe{height:4px}
+    .card-header{margin-top:5px;margin-bottom:6px}
+    .card-cost{font-size:18px}
+    .card-cost .s{font-size:11px}
+    .tier-badge{font-size:9px;padding:1.5px 4px}
+    .card-name{font-size:11px;margin-bottom:4px;line-height:1.15}
+    /* On mobile: drop role text + flavor desc to keep card scannable */
+    .hand .card .card-role,.hand .card .card-desc{display:none}
+    .card-tags{gap:2px}
+    .tag{font-size:7.5px;padding:1.5px 4px;letter-spacing:.3px}
+
+    /* Action buttons — big tap targets */
+    .actions{gap:6px}
+    button{padding:14px 14px;font-size:12px;letter-spacing:1.5px;min-height:48px}
+    button .cost{font-size:13px}
+
+    /* Pick screen — 2 columns on mobile */
+    .pick-screen{padding:16px 0}
+    .pick-header{margin-bottom:18px}
+    .pick-header .eyebrow{font-size:9px;letter-spacing:2.5px}
+    .pick-header h2{font-size:22px}
+    .pick-header .sub{font-size:12px}
+    .pick-cards{grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px}
+    .pick-card{padding:14px 10px 12px;min-height:170px}
+    .pick-card .card-name{font-size:12px}
+    .pick-card .card-role{font-size:9px}
+    .pick-card .card-desc{font-size:9.5px;line-height:1.45}
+
+    /* Intro */
+    .intro{padding:40px 16px 32px}
+    .intro .eyebrow{font-size:10px;letter-spacing:5px;margin-bottom:18px}
+    .intro h1{font-size:56px;letter-spacing:-2px}
+    .intro .tagline{font-size:15px}
+    .intro .desc{font-size:12px;line-height:1.7;margin:20px auto 28px}
+    .intro-actions{max-width:100%}
+
+    /* End screen */
+    .end-screen{padding:40px 16px 32px}
+    .end-screen .eyebrow{letter-spacing:4px}
+    .end-screen h1{font-size:42px;letter-spacing:-1px}
+    .end-screen .flavor{font-size:14px;margin-bottom:24px}
+    .stats-grid{padding:16px;gap:10px 14px}
+    .stat-row .v{font-size:18px}
+    .stat-row .k{font-size:8px;letter-spacing:1.5px}
+    .end-screen .restart-btn{max-width:100%}
+
+    /* Modals */
+    .modal-backdrop{padding:12px;align-items:flex-end}
+    .modal{padding:20px 16px;max-height:90vh;border-radius:8px 8px 4px 4px}
+    .modal h3{font-size:18px}
+    .modal h4{font-size:10px;letter-spacing:2px}
+    .modal p,.modal li{font-size:12px}
+    .milestone .icon{font-size:56px}
+    .milestone h3{font-size:22px;letter-spacing:0}
+    .milestone .sub{font-size:13px}
+
+    /* Deck modal */
+    .deck-row{padding:10px 12px;font-size:12px}
+    .deck-card-name{font-size:13px}
+    .deck-card-meta{font-size:9px}
+    .deck-card-count{font-size:15px}
+    .deck-summary{font-size:11px;padding:8px 12px}
+    .tier-legend{font-size:10px;flex-wrap:wrap;gap:10px}
+  }
+
+  /* ========================================
+     VERY SMALL PHONES (iPhone SE etc, <380px)
+     ========================================*/
+  @media(max-width:380px){
+    .timer{font-size:36px}
+    .timer .unit{font-size:18px}
+    .enc-name{font-size:16px}
+    .enc-desc{font-size:12px}
+    .substat .v{font-size:14px}
+    .substat .k{font-size:7.5px;letter-spacing:1px}
+    .card{min-height:118px;padding:8px 6px 7px}
+    .card-cost{font-size:16px}
+    .card-name{font-size:10px}
+    .tier-badge{font-size:8px}
+    .tag{font-size:7px;padding:1px 3px}
+    .intro h1{font-size:48px}
+    .end-screen h1{font-size:36px}
+    button{font-size:11px;padding:13px 12px;letter-spacing:1px}
+    button .cost{font-size:12px}
+    .pick-card{min-height:160px;padding:12px 8px 10px}
+  }
+</style>
+</head>
+<body>
+  <div id="game"></div>
+  <div id="floats" style="position:fixed;inset:0;pointer-events:none;z-index:200"></div>
+<script>
+'use strict';
+
+// ============================================================
+// CONFIG
+// ============================================================
+const CONFIG = {
+  STARTING_TIME: 500,
+  HAND_SIZE: 3,
+  STAGES_BEFORE_BOSS: 5,
+  ENCOUNTERS_PER_STAGE: 9,
+  BOSS_ENCOUNTERS: 5,
+  PICK_OPTIONS: 5,
+  WARNING_THRESHOLD: 250,
+  CRITICAL_THRESHOLD: 100,
+  SKIP_BASE_COST: 5,
+  SKIP_INCREMENT: 5,
+  MILESTONE_EVERY: 10,
+};
+
+// ============================================================
+// CARD DEFINITIONS
+// 6 items × 3 tiers = 18 types
+// mainRole: encounter type where this card is BEST
+// subRole:  encounter type where this card has SECONDARY use
+// tier: 1/2/3 — higher = more effective, only in pick pool
+// ============================================================
+const ITEM_BASE = {
+  day_thung: {
+    name: 'Dây thừng',
+    mainRole: 'blocked',
+    subRole: 'gap',
+    mainDesc: 'Buộc, cố định, chặn vật cản',
+    subDesc: 'Leo trèo, vượt khoảng hở',
+    tiers: [
+      { desc: 'Sợi dây mỏng, ngắn. Buộc được vật nhẹ.' },
+      { desc: 'Dây leo chắc chắn, đủ dài để vượt hầu hết khoảng hở.' },
+      { desc: 'Dây leo chuyên dụng, khóa tự động. Không gì cản được.' },
+    ]
+  },
+  binh_nuoc: {
+    name: 'Bình nước',
+    mainRole: 'fire',
+    subRole: 'injured',
+    mainDesc: 'Dập tắt lửa',
+    subDesc: 'Sơ cứu bỏng, rửa vết thương',
+    tiers: [
+      { desc: 'Chai nhựa 500ml. Dập lửa nhỏ được.' },
+      { desc: 'Bình 2L bằng thép. Đủ dập lửa cỡ vừa.' },
+      { desc: 'Can 5L có vòi phun. Kiểm soát đám cháy lớn.' },
+    ]
+  },
+  khau_trang: {
+    name: 'Khẩu trang',
+    mainRole: 'smoke',
+    subRole: 'crowd',
+    mainDesc: 'Lọc khói, bảo vệ hô hấp',
+    subDesc: 'Che nhận dạng, qua đám đông',
+    tiers: [
+      { desc: 'Khẩu trang vải. Lọc được khói nhẹ.' },
+      { desc: 'Khẩu trang N95. Lọc khói dày và bụi.' },
+      { desc: 'Mặt nạ phòng độc. Chống cả khí gas.' },
+    ]
+  },
+  den_pin: {
+    name: 'Đèn pin',
+    mainRole: 'darkness',
+    subRole: 'smoke',
+    mainDesc: 'Soi tối, dẫn đường',
+    subDesc: 'Định hướng qua khói, phát tín hiệu',
+    tiers: [
+      { desc: 'Đèn pin nhỏ, pin yếu. Soi được vài mét.' },
+      { desc: 'Đèn pin chiến thuật. Sáng mạnh, pin bền.' },
+      { desc: 'Đèn pha đội đầu công suất cao. Xuyên qua cả khói dày.' },
+    ]
+  },
+  bang_gac: {
+    name: 'Băng gạc',
+    mainRole: 'injured',
+    subRole: 'blocked',
+    mainDesc: 'Sơ cứu vết thương',
+    subDesc: 'Nẹp tạm thời, buộc vật cản nhỏ',
+    tiers: [
+      { desc: 'Băng gạc cơ bản. Cầm máu vết thương nhẹ.' },
+      { desc: 'Bộ sơ cứu đầy đủ. Xử lý gãy xương, bỏng.' },
+      { desc: 'Túi y tế chuyên nghiệp. Hồi tỉnh, xử lý đa chấn thương.' },
+    ]
+  },
+  co_le: {
+    name: 'Cờ lê',
+    mainRole: 'blocked',
+    subRole: 'water',
+    mainDesc: 'Phá cửa, tháo cơ chế khóa',
+    subDesc: 'Vặn van nước, sửa ống',
+    tiers: [
+      { desc: 'Cờ lê nhỏ. Mở được bu lông đơn giản.' },
+      { desc: 'Cờ lê đa năng. Phá cửa kim loại được.' },
+      { desc: 'Bộ dụng cụ phá khóa chuyên dụng. Không cửa nào cản được.' },
+    ]
+  },
+};
+
+// Build flat CARDS map: day_thung_1, day_thung_2, day_thung_3, ...
+const CARDS = {};
+for (const [baseId, base] of Object.entries(ITEM_BASE)) {
+  for (let t = 1; t <= 3; t++) {
+    const id = baseId + '_' + t;
+    const stars = '★'.repeat(t) + '☆'.repeat(3 - t);
+    CARDS[id] = {
+      name: base.name,
+      tier: t,
+      stars,
+      baseId,
+      mainRole: base.mainRole,
+      subRole: base.subRole,
+      mainDesc: base.mainDesc,
+      subDesc: base.subDesc,
+      desc: base.tiers[t - 1].desc,
+      tags: [base.mainRole, base.subRole],
+      pool: t >= 2,  // tier 1 = starter only; tier 2-3 = pickable
+    };
+  }
+}
+
+// Starter deck: 50 cards — tier 1 (×6-8 each) + tier 2 (×2 each)
+const STARTER_DECK = [
+  ...Array(6).fill('day_thung_1'),
+  ...Array(2).fill('day_thung_2'),
+  ...Array(6).fill('binh_nuoc_1'),
+  ...Array(2).fill('binh_nuoc_2'),
+  ...Array(6).fill('khau_trang_1'),
+  ...Array(2).fill('khau_trang_2'),
+  ...Array(7).fill('den_pin_1'),
+  ...Array(2).fill('den_pin_2'),
+  ...Array(6).fill('bang_gac_1'),
+  ...Array(2).fill('bang_gac_2'),
+  ...Array(7).fill('co_le_1'),
+  ...Array(2).fill('co_le_2'),
+  // Total: (6+2)+(6+2)+(6+2)+(7+2)+(6+2)+(7+2) = 8+8+8+9+8+9 = 50 ✓
+];
+
+// ============================================================
+// COST MATRIX
+// cost(cardId, encounterId) uses role-based tiers:
+//   main role match:  [t1, t2, t3] costs
+//   sub  role match:  [t1, t2, t3] costs
+//   off-role:         [t1, t2, t3] costs
+// Per encounter TIER (v1/v2/v3):
+//   V1: main[6,3,1]   sub[12,8,5]   off[18,14,10]
+//   V2: main[14,7,3]  sub[20,13,9]  off[26,20,16]
+//   V3: main[30,16,5] sub[38,24,14] off[45,34,26]
+// Special overrides defined per encounter where needed.
+// ============================================================
+
+const COST_TABLE = {
+  // [encTier][role][cardTier-1]
+  1: { main: [6, 3, 1],  sub: [12, 8, 5],  off: [18, 14, 10] },
+  2: { main: [14, 7, 3], sub: [20, 13, 9], off: [26, 20, 16] },
+  3: { main: [30, 16, 5], sub: [38, 24, 14], off: [45, 34, 26] },
+};
+
+function getCardCost(card, encounter) {
+  // Check for explicit override
+  if (encounter.overrides) {
+    const ov = encounter.overrides[card.id];
+    if (ov != null) return ov;
+  }
+  const table = COST_TABLE[encounter.tier];
+  const cardTierIdx = card.tier - 1; // 0,1,2
+  if (card.mainRole === encounter.type) return table.main[cardTierIdx];
+  if (card.subRole  === encounter.type) return table.sub[cardTierIdx];
+  return table.off[cardTierIdx];
+}
+
+function costLabel(cost) {
+  if (cost <= 3)  return 'Hoàn hảo';
+  if (cost <= 7)  return 'Khá hợp';
+  if (cost <= 12) return 'Tạm dùng';
+  if (cost <= 18) return 'Khá vô lý';
+  if (cost <= 28) return 'Vô lý';
+  return 'Thảm họa';
+}
+
+// ============================================================
+// ENCOUNTERS — 20 total
+// overrides{}: special card_id → cost for flavour exceptions
+// ============================================================
+const ENCOUNTERS = [
+  // ── TIER 1 ──────────────────────────────────────────────
+  { id:'fire_v1', tier:1, type:'fire', icon:'🔥', weight:15,
+    name:'Cháy nhỏ trong căn hộ',
+    desc:'Khói đen bốc lên từ bếp gas. Cần dập trước khi lan ra rèm cửa.' },
+
+  { id:'injured_v1', tier:1, type:'injured', icon:'🩹', weight:15,
+    name:'Người bị thương nhẹ',
+    desc:'Một người bị xây xát ở cầu thang. Đầu chảy máu, vẫn tỉnh táo.' },
+
+  { id:'blocked_v1', tier:1, type:'blocked', icon:'🚧', weight:15,
+    name:'Tủ đổ chắn ngang',
+    desc:'Một tủ gỗ lớn đổ chắn hành lang. Có thể đập, cạy, hoặc tìm cách qua.' },
+
+  { id:'smoke_v1', tier:1, type:'smoke', icon:'☁️', weight:10,
+    name:'Khói loãng trong sảnh',
+    desc:'Khói nhẹ từ đám cháy xa. Vẫn nhìn rõ nhưng khó thở.' },
+
+  { id:'gap_v1', tier:1, type:'gap', icon:'🪜', weight:8,
+    name:'Khoảng cách nhỏ',
+    desc:'Một khe hở giữa hai sàn. Có thể nhảy qua nhưng cần khéo léo.' },
+
+  { id:'water_v1', tier:1, type:'water', icon:'💧', weight:8,
+    name:'Ống nước vỡ',
+    desc:'Ống nước chính bị vỡ, nước phun ra ngập sàn.' },
+
+  // ── TIER 2 ──────────────────────────────────────────────
+  { id:'fire_v2', tier:2, type:'fire', icon:'🔥', weight:10,
+    name:'Cháy vừa lan hành lang',
+    desc:'Lửa bám vào thảm và rèm cửa. Khói dày, lan nhanh.' },
+
+  { id:'injured_v2', tier:2, type:'injured', icon:'🩹', weight:10,
+    name:'Người gãy chân',
+    desc:'Không đi được. Cần nẹp xương và phương tiện hỗ trợ.' },
+
+  { id:'blocked_v2', tier:2, type:'blocked', icon:'🚧', weight:10,
+    name:'Cửa kim loại khóa',
+    desc:'Cửa thép chắn lối ra. Phá khóa hoặc tìm cơ chế mở.' },
+
+  { id:'smoke_v2', tier:2, type:'smoke', icon:'☁️', weight:10,
+    name:'Khói dày, không nhìn rõ',
+    desc:'Khói đậm đặc, vừa khó thở vừa khó định hướng.' },
+
+  { id:'gap_v2', tier:2, type:'gap', icon:'🪜', weight:8,
+    name:'Khoảng cách lớn',
+    desc:'Khe hở quá rộng để nhảy. Cần thiết bị hỗ trợ.' },
+
+  { id:'water_v2', tier:2, type:'water', icon:'💧', weight:8,
+    name:'Tầng dưới ngập nước',
+    desc:'Cả tầng dưới ngập nước đến đầu gối. Dòng chảy yếu, đáy mờ.' },
+
+  { id:'electrical_v2', tier:2, type:'electrical', icon:'⚡', weight:6,
+    name:'Tủ điện chập cháy',
+    desc:'Tủ điện chập, tia lửa bắn ra. Nguy cơ cháy nổ và điện giật cao.',
+    overrides:{
+      // Cờ lê cấp cao là "phá cơ chế" nên hợp hơn bình thường
+      'co_le_2': 8, 'co_le_3': 4,
+      // Bình nước rất nguy hiểm với điện
+      'binh_nuoc_1': 38, 'binh_nuoc_2': 32, 'binh_nuoc_3': 28,
+    }},
+
+  { id:'crowd_v2', tier:2, type:'crowd', icon:'👥', weight:7,
+    name:'Đám đông tranh giành',
+    desc:'Một nhóm người hoảng loạn tranh giành tài nguyên. Sẵn sàng cướp đồ nếu bạn đi qua.' },
+
+  // ── TIER 3 ──────────────────────────────────────────────
+  { id:'fire_v3', tier:3, type:'fire', icon:'🔥', weight:10,
+    name:'Cháy lớn cạnh bình gas',
+    desc:'Đám lửa lớn ngay sát hai bình gas. Cực kỳ nguy hiểm.' },
+
+  { id:'injured_v3', tier:3, type:'injured', icon:'🩹', weight:12,
+    name:'Người bất tỉnh',
+    desc:'Người sống sót bất tỉnh. Cần sơ cứu chuyên sâu hoặc gọi cứu hộ.' },
+
+  { id:'blocked_v3', tier:3, type:'blocked', icon:'🚧', weight:10,
+    name:'Tường sập, đống đổ nát',
+    desc:'Cả mảng tường sụp xuống chắn lối. Khối đổ nát rất lớn.' },
+
+  { id:'smoke_v3', tier:3, type:'smoke', icon:'☁️', weight:8,
+    name:'Khí gas rò rỉ',
+    desc:'Mùi gas nồng nặc. Khẩu trang cấp thấp gần như vô tác dụng.',
+    overrides:{
+      // Khẩu trang cấp 1-2 tệ hơn bình thường vs gas
+      'khau_trang_1': 42, 'khau_trang_2': 22,
+    }},
+
+  { id:'gap_v3', tier:3, type:'gap', icon:'🪜', weight:8,
+    name:'Vực sâu, tối đen',
+    desc:'Một vực sâu, không thấy đáy. Cần dây leo và ánh sáng mạnh.' },
+
+  { id:'darkness_v3', tier:3, type:'darkness', icon:'🌑', weight:6,
+    name:'Khu vực mất điện hoàn toàn',
+    desc:'Toàn bộ khu vực mất điện. Không thấy gì cả.' },
+];
+
+// ============================================================
+// STATE & HELPERS
+// ============================================================
+let state = null;
+const root = document.getElementById('game');
+const floatsEl = document.getElementById('floats');
+
+function randItem(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function randItemWeighted(items){
+  const total = items.reduce((s,i)=>s+(i.weight||10),0);
+  let r = Math.random()*total;
+  for(const item of items){ r-=(item.weight||10); if(r<=0)return item; }
+  return items[items.length-1];
+}
+
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function newCardInstance(id){
+  return { uid: Math.random().toString(36).slice(2), id, ...CARDS[id] };
+}
+
+function generateStageEncounters(stage){
+  if(stage==='boss'){
+    return ['fire_v3','injured_v3','blocked_v3','smoke_v3','gap_v3']
+      .map(id=>ENCOUNTERS.find(e=>e.id===id));
+  }
+  let pool;
+  if(stage===1)      pool=ENCOUNTERS.filter(e=>e.tier===1);
+  else if(stage===2) pool=ENCOUNTERS.filter(e=>e.tier<=2);
+  else if(stage===3) pool=ENCOUNTERS.filter(e=>e.tier===2);
+  else if(stage===4) pool=ENCOUNTERS.filter(e=>e.tier>=2);
+  else               pool=ENCOUNTERS.filter(e=>e.tier===3);
+
+  const result=[];
+  let last=null;
+  for(let i=0;i<CONFIG.ENCOUNTERS_PER_STAGE;i++){
+    let p=last?pool.filter(e=>e.id!==last.id):pool;
+    if(!p.length)p=pool;
+    const chosen=randItemWeighted(p);
+    result.push(chosen);
+    last=chosen;
+  }
+  return result;
+}
+
+// ============================================================
+// GAME ACTIONS
+// ============================================================
+function init(){
+  state={
+    phase:'intro', timer:CONFIG.STARTING_TIME,
+    deck:[], hand:[], burned:[],
+    stage:1, encounterIdx:0, encounterQueue:[],
+    currentEncounter:null, selectedUid:null,
+    skipCount:0, pickOptions:[], pendingMilestone:null,
+    stats:{plays:0,skips:0,encountersPassed:0},
+    error:null,
+  };
+  render();
+}
+
+function startRun(){
+  state.deck=shuffle(STARTER_DECK.map(newCardInstance));
+  state.hand=[];
+  state.burned=[];
+  state.timer=CONFIG.STARTING_TIME;
+  state.stage=1;
+  state.encounterIdx=0;
+  state.skipCount=0;
+  state.pendingMilestone=null;
+  state.stats={plays:0,skips:0,encountersPassed:0};
+  state.encounterQueue=generateStageEncounters(1);
+  loadNextEncounter();
+}
+
+function loadNextEncounter(){
+  drawToHandSize();
+  state.currentEncounter=state.encounterQueue[state.encounterIdx];
+  state.selectedUid=null;
+  state.phase='encounter';
+  render();
+}
+
+function drawToHandSize(){
+  while(state.hand.length<CONFIG.HAND_SIZE && state.deck.length>0){
+    state.hand.push(state.deck.shift());
+  }
+}
+
+function selectCard(uid){
+  state.selectedUid=state.selectedUid===uid?null:uid;
+  state.error=null;
+  render();
+}
+
+function getSelectedCard(){ return state.hand.find(c=>c.uid===state.selectedUid); }
+
+function showFloat(text,label,type){
+  const wrap=document.createElement('div');
+  wrap.className='float-up'+(type==='gain'?' gain':'');
+  const num=document.createElement('span'); num.className='num'; num.textContent=text;
+  wrap.appendChild(num);
+  if(label){const lab=document.createElement('span');lab.className='label';lab.textContent=label;wrap.appendChild(lab);}
+  const tEl=document.querySelector('.timer');
+  if(tEl){const r=tEl.getBoundingClientRect();wrap.style.left=(r.left+r.width/2)+'px';wrap.style.top=(r.top+8)+'px';}
+  else{wrap.style.left='50%';wrap.style.top='40px';}
+  floatsEl.appendChild(wrap);
+  setTimeout(()=>wrap.remove(),1600);
+}
+
+function spendTime(amount,label){
+  state.timer-=amount;
+  showFloat('−'+amount+'s',label,'loss');
+  if(state.timer<=0){state.timer=0;return false;}
+  return true;
+}
+
+function playSelected(){
+  const card=getSelectedCard();
+  if(!card){state.error='Chọn 1 lá bài để chơi';render();return;}
+  const enc=state.currentEncounter;
+  const cost=getCardCost(card,enc);
+  const label=costLabel(cost);
+  state.hand=state.hand.filter(c=>c.uid!==card.uid);
+  state.burned.push(card);
+  state.selectedUid=null;
+  state.stats.plays++;
+  state.error=null;
+  if(!spendTime(cost,label)){setTimeout(()=>endGame(false),800);return;}
+  setTimeout(advanceAfterResolve,600);
+}
+
+function skipEncounter(){
+  const cost=CONFIG.SKIP_BASE_COST+state.skipCount*CONFIG.SKIP_INCREMENT;
+  state.error=null;
+  if(!spendTime(cost,'Bỏ qua')){setTimeout(()=>endGame(false),800);return;}
+  state.skipCount++;
+  state.stats.skips++;
+  setTimeout(advanceAfterResolve,500);
+}
+
+function advanceAfterResolve(){
+  state.stats.encountersPassed++;
+  state.encounterIdx++;
+  const passed=state.stats.encountersPassed;
+  if(passed>0 && passed%CONFIG.MILESTONE_EVERY===0 && passed<50){
+    const m=passed/CONFIG.MILESTONE_EVERY;
+    state.pendingMilestone=m;
+    showMilestoneModal(m,()=>{state.pendingMilestone=null;continueAdvance();});
+    return;
+  }
+  continueAdvance();
+}
+
+function continueAdvance(){
+  const encInStage=(state.stage==='boss')?CONFIG.BOSS_ENCOUNTERS:CONFIG.ENCOUNTERS_PER_STAGE;
+  if(state.encounterIdx>=encInStage){
+    if(state.stage==='boss'){endGame(true);return;}
+    // Build pick pool: all tier 2+3 cards
+    const pool=Object.keys(CARDS).filter(k=>CARDS[k].pool);
+    state.pickOptions=shuffle(pool).slice(0,CONFIG.PICK_OPTIONS);
+    state.phase='pick';
+    render();
+  } else {
+    loadNextEncounter();
+  }
+}
+
+function pickCard(cardId){
+  state.deck.push(newCardInstance(cardId));
+  state.deck=shuffle(state.deck);
+  proceedToNextStage();
+}
+
+function skipPick(){ proceedToNextStage(); }
+
+function proceedToNextStage(){
+  state.stage=(state.stage===CONFIG.STAGES_BEFORE_BOSS)?'boss':state.stage+1;
+  state.encounterIdx=0;
+  state.encounterQueue=generateStageEncounters(state.stage);
+  loadNextEncounter();
+}
+
+function endGame(win){ state.phase=win?'win':'lose'; render(); }
+
+// ============================================================
+// RENDER HELPERS
+// ============================================================
+function h(tag,attrs,...children){
+  const el=document.createElement(tag);
+  if(attrs){
+    for(const[k,v]of Object.entries(attrs)){
+      if(v==null||v===false)continue;
+      if(k==='class')el.className=v;
+      else if(k==='onclick')el.addEventListener('click',v);
+      else if(k==='style')el.style.cssText=v;
+      else el.setAttribute(k,v);
+    }
+  }
+  for(const child of children.flat()){
+    if(child==null||child===false)continue;
+    el.appendChild(typeof child==='string'?document.createTextNode(child):child);
+  }
+  return el;
+}
+
+function render(){
+  root.innerHTML='';
+  if(state.phase==='intro')   return renderIntro();
+  if(state.phase==='encounter')return renderGame();
+  if(state.phase==='pick')    return renderPick();
+  if(state.phase==='win'||state.phase==='lose') return renderEnd();
+}
+
+// ── INTRO ────────────────────────────────────────────────────
+function renderIntro(){
+  root.appendChild(h('div',{class:'intro slide-in'},
+    h('div',{class:'eyebrow'},'PROTOTYPE V0.4'),
+    h('h1',null,'ĐẾM ',h('span',{class:'red'},'NGƯỢC')),
+    h('div',{class:'tagline'},'Thiên thạch sắp rơi.'),
+    h('div',{class:'tagline'},'Bạn có 500 giây để vượt 50 tình huống.'),
+    h('div',{class:'desc'},
+      'Mỗi tình huống: chơi 1 lá (cost tùy tier & loại), hoặc bỏ qua (+5s mỗi lần dùng). Lá đã chơi mất vĩnh viễn.'),
+    h('div',{class:'intro-actions'},
+      h('button',{class:'primary',onclick:()=>startRun()},'Bắt đầu run'),
+      h('button',{class:'subtle',onclick:showRules},'Xem luật chơi')
+    )
+  ));
+}
+
+function showRules(){
+  const bd=h('div',{class:'modal-backdrop',onclick:(e)=>{if(e.target===bd)bd.remove();}},
+    h('div',{class:'modal'},
+      h('h3',null,'Luật chơi'),
+      h('p',null,'Bạn có 500 giây dự trữ. Hết là thua.'),
+      h('h4',null,'Mỗi tình huống'),
+      h('ul',null,
+        h('li',null,'CHƠI LÁ — mất cost ghi trên lá, lá biến mất khỏi deck.'),
+        h('li',null,'BỎ QUA — không mất lá, nhưng mất time: lần 1 mất 5s, lần 2 mất 10s, lần 3 mất 15s...')
+      ),
+      h('h4',null,'Cost của lá phụ thuộc 2 yếu tố'),
+      h('ul',null,
+        h('li',null,'Tier lá (★ / ★★ / ★★★) — tier cao hơn luôn rẻ hơn cho mọi tình huống.'),
+        h('li',null,'Vai trò (chính / phụ / ngoài vai trò) — dùng đúng vai trò chính là rẻ nhất.')
+      ),
+      h('h4',null,'Ví dụ — Dây thừng vs Khe hở V2'),
+      h('ul',null,
+        h('li',null,'★ (vai trò phụ: gap) → 20s'),
+        h('li',null,'★★ (vai trò phụ: gap) → 13s'),
+        h('li',null,'★★★ (vai trò phụ: gap) → 9s'),
+        h('li',null,'★★★ Cờ lê (ngoài vai trò) → 16s')
+      ),
+      h('h4',null,'Cấu trúc run'),
+      h('ul',null,
+        h('li',null,'5 màn × 9 tình huống, sau mỗi màn chọn 1 lá tier 2-3 bổ sung vào deck.'),
+        h('li',null,'Boss: 5 tình huống V3 liên tiếp.'),
+        h('li',null,'Tổng cộng 50 tình huống/run.')
+      ),
+      h('button',{class:'modal-close primary',onclick:()=>bd.remove()},'Đã hiểu')
+    )
+  );
+  document.body.appendChild(bd);
+}
+
+// ── STATUS BAR ───────────────────────────────────────────────
+function renderStatus(){
+  const totalEnc=CONFIG.STAGES_BEFORE_BOSS*CONFIG.ENCOUNTERS_PER_STAGE+CONFIG.BOSS_ENCOUNTERS;
+  const passed=state.stats.encountersPassed;
+  const fuelPct=Math.max(0,Math.min(100,(state.timer/CONFIG.STARTING_TIME)*100));
+  const timerCls=state.timer<CONFIG.CRITICAL_THRESHOLD?'timer critical':state.timer<CONFIG.WARNING_THRESHOLD?'timer warning':'timer';
+
+  const dots=[];
+  for(let s=1;s<=CONFIG.STAGES_BEFORE_BOSS;s++){
+    let cls='dot';
+    if(state.stage==='boss'||s<state.stage)cls+=' done';
+    else if(s===state.stage)cls+=' current';
+    dots.push(h('div',{class:cls}));
+  }
+  let bossCls='dot boss';
+  if(state.stage==='boss')bossCls+=' current';
+  dots.push(h('div',{class:bossCls}));
+
+  return h('div',null,
+    h('div',{class:'status'},
+      h('div',{class:'reserve-label'},'Dự trữ thời gian'),
+      h('div',{class:'timer-row'},
+        h('div',{class:timerCls},String(Math.max(0,state.timer)),h('span',{class:'unit'},'s')),
+        h('div',{class:'stage-track'},
+          h('div',{class:'label'},'Tiến trình'),
+          h('div',{class:'stage-dots'},...dots)
+        )
+      ),
+      h('div',{class:'fuel-bar'},h('div',{class:'fuel-bar-fill',style:'width:'+fuelPct+'%'}))
+    ),
+    h('div',{class:'substats'},
+      h('div',{class:'substat clickable',onclick:showDeckBreakdown},
+        h('span',{class:'v'},String(state.deck.length)),
+        h('span',{class:'k'},'Cọc bài',h('span',{class:'arrow'},'↗'))
+      ),
+      h('div',{class:'substat'},
+        h('span',{class:'v'},String(state.hand.length)),
+        h('span',{class:'k'},'Trên tay')
+      ),
+      h('div',{class:'substat'},
+        h('span',{class:'v'},String(state.stats.skips)),
+        h('span',{class:'k'},'Đã bỏ qua')
+      ),
+      h('div',{class:'substat'},
+        h('span',{class:'v'},passed+'/'+totalEnc),
+        h('span',{class:'k'},'Tình huống')
+      )
+    )
+  );
+}
+
+// ── DECK MODAL ────────────────────────────────────────────────
+function showDeckBreakdown(){
+  const counts={};
+  for(const c of [...state.hand,...state.deck]){
+    counts[c.id]=(counts[c.id]||0)+1;
+  }
+  const sortedIds=Object.keys(counts).sort((a,b)=>{
+    const ta=CARDS[a].tier, tb=CARDS[b].tier;
+    if(ta!==tb)return ta-tb;
+    return CARDS[a].name.localeCompare(CARDS[b].name);
+  });
+
+  const TIER_COLORS=['#c8b48a','#8ab4c8','#c8a03c'];
+
+  const rows=sortedIds.length===0
+    ?[h('div',{class:'deck-row',style:'justify-content:center;color:var(--text-faint)'},'Bộ bài trống')]
+    :sortedIds.map(id=>{
+      const info=CARDS[id];
+      const dotColor=TIER_COLORS[info.tier-1];
+      return h('div',{class:'deck-row'},
+        h('div',null,
+          h('div',{class:'deck-card-name'},
+            h('span',{class:'deck-tier-dot',style:'background:'+dotColor}),
+            info.name+' '+info.stars
+          ),
+          h('div',{class:'deck-card-meta'},'chính: '+info.mainRole+' · phụ: '+info.subRole)
+        ),
+        h('div',{class:'deck-card-count'},'×'+counts[id])
+      );
+    });
+
+  const totalCards=state.hand.length+state.deck.length;
+  const bd=h('div',{class:'modal-backdrop',onclick:(e)=>{if(e.target===bd)bd.remove();}},
+    h('div',{class:'modal'},
+      h('h3',null,'Bộ bài hiện tại'),
+      h('div',{class:'deck-summary'},
+        h('span',null,'Còn lại: ',h('strong',null,totalCards+' lá')),
+        h('span',null,'Đã mất: ',h('strong',null,state.burned.length+' lá'))
+      ),
+      h('div',{class:'tier-legend'},
+        h('span',null,h('div',{class:'tl-dot',style:'background:#c8b48a'}), '★ Cấp 1'),
+        h('span',null,h('div',{class:'tl-dot',style:'background:#8ab4c8'}), '★★ Cấp 2'),
+        h('span',null,h('div',{class:'tl-dot',style:'background:#c8a03c'}), '★★★ Cấp 3')
+      ),
+      h('div',{class:'deck-list'},...rows),
+      h('button',{class:'modal-close primary',onclick:()=>bd.remove()},'Đóng')
+    )
+  );
+  document.body.appendChild(bd);
+}
+
+// ── MILESTONE MODAL ───────────────────────────────────────────
+function showMilestoneModal(milestoneNum, onContinue){
+  const msgs=[
+    'Vẫn còn thời gian. Cố lên!',
+    'Đã hơn nửa đường. Đừng bỏ cuộc!',
+    'Sắp tới rồi. Tiếp tục!',
+    'Hầm trú ẩn ngay trước mặt. Cố thêm chút nữa!',
+  ];
+  const bd=h('div',{class:'modal-backdrop'},
+    h('div',{class:'modal milestone'},
+      h('div',{class:'icon'},'🏃'),
+      h('h3',null,milestoneNum+'/5 CHẶNG ĐƯỜNG'),
+      h('div',{class:'sub'},'Bạn đã qua '+(milestoneNum*10)+'/50 tình huống.'),
+      h('div',{class:'encourage'},msgs[Math.min(milestoneNum-1,3)]),
+      h('div',{class:'sub'},'Còn '+state.timer+'s dự trữ.'),
+      h('button',{class:'modal-close primary',onclick:()=>{bd.remove();onContinue();}},'Tiếp tục')
+    )
+  );
+  document.body.appendChild(bd);
+}
+
+// ── ENCOUNTER SCREEN ──────────────────────────────────────────
+function renderGame(){
+  root.appendChild(renderStatus());
+  const enc=state.currentEncounter;
+  const tierLabel=state.stage==='boss'?'BOSS':'V'+enc.tier;
+  root.appendChild(h('div',{class:'encounter slide-in'},
+    h('div',{class:'enc-icon'},enc.icon),
+    h('div',{class:'enc-tier'},tierLabel+' · '+enc.type.toUpperCase()),
+    h('div',{class:'enc-name'},enc.name),
+    h('div',{class:'enc-desc'},enc.desc)
+  ));
+  // Hand
+  const cells=[];
+  for(let i=0;i<CONFIG.HAND_SIZE;i++){
+    if(state.hand[i])cells.push(renderHandCard(state.hand[i]));
+    else cells.push(h('div',{class:'card empty'},'Trống'));
+  }
+  root.appendChild(h('div',null,
+    h('div',{class:'section-label'},'Tay bài — chọn 1 lá để chơi'),
+    h('div',{class:'hand'},...cells)
+  ));
+  // Actions
+  const card=getSelectedCard();
+  const enc2=state.currentEncounter;
+  const skipCost=CONFIG.SKIP_BASE_COST+state.skipCount*CONFIG.SKIP_INCREMENT;
+  const nextSkipCost=skipCost+CONFIG.SKIP_INCREMENT;
+  const buttons=[];
+  if(state.hand.length>0){
+    const cost=card?getCardCost(card,enc2):null;
+    buttons.push(h('button',{class:'primary',disabled:!card,onclick:playSelected},
+      h('span',null,card?'Chơi '+card.name+' '+card.stars:'Chọn 1 lá để chơi'),
+      h('span',{class:'cost'},card?'−'+cost+'s':'')
+    ));
+  }
+  buttons.push(h('button',{class:'danger',onclick:skipEncounter},
+    h('span',null,state.hand.length===0?'Bỏ qua (không còn bài)':'Bỏ qua tình huống'),
+    h('span',{class:'cost'},'−'+skipCost+'s'+(state.skipCount>0?' (kế: '+nextSkipCost+'s)':''))
+  ));
+  root.appendChild(h('div',{class:'actions'},...buttons));
+  if(state.error){
+    root.appendChild(h('div',{class:'substats',style:'margin-top:8px;border-color:#6d3030'},
+      h('div',{class:'substat',style:'flex:1;text-align:center;color:#d68080'},state.error)
+    ));
+  }
+}
+
+function renderHandCard(card){
+  const selected=state.selectedUid===card.uid;
+  const enc=state.currentEncounter;
+  const cost=getCardCost(card,enc);
+  const isMain=card.mainRole===enc.type;
+  const isSub=!isMain&&card.subRole===enc.type;
+  const tierCls='t'+card.tier;
+  return h('div',{class:'card '+tierCls+(selected?' selected':''),onclick:()=>selectCard(card.uid)},
+    h('div',{class:'tier-stripe'}),
+    h('div',{class:'card-header'},
+      h('div',{class:'card-cost'},String(cost),h('span',{class:'s'},'s')),
+      h('div',{class:'tier-badge'},card.stars)
+    ),
+    h('div',{class:'card-name'},card.name),
+    h('div',{class:'card-role'},
+      h('span',{class:'main-role'},card.mainDesc),
+      h('br'),
+      '↳ '+card.subDesc
+    ),
+    h('div',{class:'card-desc'},card.desc),
+    h('div',{class:'card-tags'},
+      h('span',{class:'tag'+(isMain?' main':'')},'chính: '+card.mainRole),
+      h('span',{class:'tag'+(isSub?' sub':'')},'phụ: '+card.subRole)
+    )
+  );
+}
+
+// ── PICK SCREEN ───────────────────────────────────────────────
+function renderPick(){
+  root.appendChild(renderStatus());
+  const stageLabel=state.stage===CONFIG.STAGES_BEFORE_BOSS?'Sắp đến boss':'Màn '+state.stage+' hoàn thành';
+
+  const cards=state.pickOptions.map(id=>{
+    const c=CARDS[id];
+    const tierCls='t'+c.tier;
+    return h('div',{class:'pick-card '+tierCls,onclick:()=>pickCard(id)},
+      h('div',{class:'tier-stripe'}),
+      h('div',{class:'card-header',style:'margin-top:8px'},
+        h('div',{class:'card-name',style:'font-size:13px;font-weight:800'},c.name),
+        h('div',{class:'tier-badge'},c.stars)
+      ),
+      h('div',{class:'card-role',style:'margin:6px 0'},
+        h('span',{class:'main-role'},c.mainDesc),
+        h('br'),
+        '↳ '+c.subDesc
+      ),
+      h('div',{class:'card-desc'},c.desc),
+      h('div',{class:'card-tags',style:'margin-top:6px'},
+        h('span',{class:'tag main'},'chính: '+c.mainRole),
+        h('span',{class:'tag sub'},'phụ: '+c.subRole)
+      )
+    );
+  });
+
+  root.appendChild(h('div',{class:'pick-screen slide-in'},
+    h('div',{class:'pick-header'},
+      h('div',{class:'eyebrow'},stageLabel),
+      h('h2',null,'Chọn 1 lá bổ sung'),
+      h('div',{class:'sub'},'Lá này sẽ được trộn vào cọc bài của bạn')
+    ),
+    h('div',{class:'pick-cards'},...cards),
+    h('button',{class:'subtle',style:'justify-content:center',onclick:skipPick},'Bỏ qua (không lấy lá nào)')
+  ));
+}
+
+// ── END SCREEN ─────────────────────────────────────────────────
+function renderEnd(){
+  const win=state.phase==='win';
+  const totalEnc=CONFIG.STAGES_BEFORE_BOSS*CONFIG.ENCOUNTERS_PER_STAGE+CONFIG.BOSS_ENCOUNTERS;
+  const flavor=win
+    ?'Bạn lao vào hầm trú ẩn ngay khi mặt đất rung chuyển. Cánh cửa thép đóng sập sau lưng.'
+    :'Hết giờ. Một vệt sáng cuối cùng băng qua bầu trời. Bạn không kịp.';
+  root.appendChild(h('div',{class:'end-screen '+(win?'win':'lose')+' slide-in'},
+    h('div',{class:'eyebrow'},win?'KẾT THÚC RUN':'GAME OVER'),
+    h('h1',null,win?'SỐNG SÓT':'THUA'),
+    h('div',{class:'flavor'},flavor),
+    h('div',{class:'stats-grid'},
+      h('div',{class:'stat-row'},h('div',{class:'k'},'Thời gian còn'),h('div',{class:'v'},state.timer+'s')),
+      h('div',{class:'stat-row'},h('div',{class:'k'},'Tình huống qua'),h('div',{class:'v'},state.stats.encountersPassed+'/'+totalEnc)),
+      h('div',{class:'stat-row'},h('div',{class:'k'},'Lượt chơi bài'),h('div',{class:'v'},String(state.stats.plays))),
+      h('div',{class:'stat-row'},h('div',{class:'k'},'Lần bỏ qua'),h('div',{class:'v'},String(state.stats.skips))),
+      h('div',{class:'stat-row'},h('div',{class:'k'},'Còn trong tay'),h('div',{class:'v'},String(state.hand.length))),
+      h('div',{class:'stat-row'},h('div',{class:'k'},'Tổng bài mất'),h('div',{class:'v'},String(state.burned.length)))
+    ),
+    h('button',{class:'primary restart-btn',onclick:()=>init()},h('span',null,'Chơi lại'))
+  ));
+}
+
+// ── START ──────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
