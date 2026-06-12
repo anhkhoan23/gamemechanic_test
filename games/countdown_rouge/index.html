@@ -29,12 +29,12 @@
   *{box-sizing:border-box;margin:0;padding:0}
   button, .card, .pick-card, .substat.clickable, .modal-close, .modal-backdrop{-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-user-select:none;user-select:none}
   button:active:not(:disabled), .card:active:not(.empty), .pick-card:active{transform:scale(.97);transition:transform .08s ease}
-  html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",sans-serif;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",sans-serif;height:100%;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden;position:fixed;inset:0}
   body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at top,rgba(255,90,60,.06) 0%,transparent 60%),radial-gradient(ellipse at bottom,rgba(180,60,20,.04) 0%,transparent 60%);pointer-events:none;z-index:0}
-  #game{max-width:780px;margin:0 auto;padding:16px;min-height:100vh;position:relative;z-index:1}
+  #game{max-width:780px;margin:0 auto;padding:16px;height:100%;position:relative;z-index:1;display:flex;flex-direction:column;overflow:hidden}
 
   /* STATUS */
-  .status{background:var(--surface);border:1px solid var(--divider);border-radius:4px;padding:18px 20px 14px;margin-bottom:16px;position:relative;overflow:hidden}
+  .status{background:var(--surface);border:1px solid var(--divider);border-radius:4px;padding:18px 20px 14px;margin-bottom:12px;position:relative;overflow:hidden;flex-shrink:0}
   .status::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--warning);box-shadow:0 0 12px var(--warning-glow)}
   .reserve-label{font-size:10px;font-weight:700;letter-spacing:3px;color:var(--text-faint);text-transform:uppercase;margin-bottom:4px;font-family:"SF Mono",Monaco,monospace}
   .timer-row{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
@@ -54,7 +54,7 @@
   .dot.boss.current{background:var(--warning);border-color:var(--warning)}
   .fuel-bar{height:3px;background:var(--divider);margin-top:14px;overflow:hidden}
   .fuel-bar-fill{height:100%;background:linear-gradient(90deg,var(--critical) 0%,var(--warning) 50%,var(--amber) 100%);transition:width .4s cubic-bezier(.4,0,.2,1)}
-  .substats{display:flex;margin-bottom:16px;background:var(--surface);border:1px solid var(--divider);border-radius:4px;font-family:"SF Mono",Monaco,monospace;font-size:11px}
+  .substats{display:flex;margin-bottom:10px;background:var(--surface);border:1px solid var(--divider);border-radius:4px;font-family:"SF Mono",Monaco,monospace;font-size:11px;flex-shrink:0}
   .substat{flex:1;padding:10px 14px;text-align:center;border-right:1px solid var(--divider);transition:background .15s}
   .substat:last-child{border-right:0}
   .substat.clickable{cursor:pointer}
@@ -64,7 +64,7 @@
   .substat .arrow{color:var(--amber);margin-left:2px}
 
   /* ENCOUNTER */
-  .encounter{background:var(--surface-2);border:1px solid var(--divider);border-radius:4px;padding:20px;margin-bottom:16px;position:relative}
+  .encounter{background:var(--surface-2);border:1px solid var(--divider);border-radius:4px;padding:16px;margin-bottom:10px;position:relative;flex-shrink:1;overflow:hidden}
   .encounter::after{content:'';position:absolute;top:0;right:0;border-top:16px solid var(--warning);border-left:16px solid transparent;opacity:.5}
   .enc-icon{font-size:32px;margin-bottom:10px;filter:saturate(.8)}
   .enc-tier{display:inline-block;font-family:"SF Mono",Monaco,monospace;font-size:10px;font-weight:700;color:var(--warning);border:1px solid var(--warning);padding:2px 6px;letter-spacing:1px;margin-bottom:10px}
@@ -73,9 +73,9 @@
 
   /* HAND */
   .section-label{font-size:10px;text-transform:uppercase;letter-spacing:3px;color:var(--text-faint);font-family:"SF Mono",Monaco,monospace;font-weight:700;margin-bottom:10px;padding:0 2px}
-  .hand{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+  .hand{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;flex-shrink:0}
 
-  .card{background:var(--paper);color:var(--ink);border-radius:3px;padding:12px 10px 10px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;display:flex;flex-direction:column;min-height:160px;position:relative;border:1px solid var(--paper-shadow);box-shadow:0 2px 0 var(--paper-shadow),0 4px 12px rgba(0,0,0,.4);font-family:"SF Mono",Monaco,monospace}
+  .card{background:var(--paper);color:var(--ink);border-radius:3px;padding:12px 10px 10px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease;display:flex;flex-direction:column;min-height:100px;position:relative;border:1px solid var(--paper-shadow);box-shadow:0 2px 0 var(--paper-shadow),0 4px 12px rgba(0,0,0,.4);font-family:"SF Mono",Monaco,monospace}
   .card:hover:not(.empty){transform:translateY(-3px);box-shadow:0 4px 0 var(--paper-shadow),0 8px 20px rgba(0,0,0,.5)}
   .card.selected{transform:translateY(-6px);border-color:var(--warning);box-shadow:0 6px 0 #a04020,0 10px 24px rgba(255,90,60,.3),inset 0 0 0 2px var(--warning)}
   .card.selected::before{content:'✓';position:absolute;top:-8px;right:-8px;background:var(--warning);color:white;width:20px;height:20px;border-radius:50%;font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.4)}
@@ -94,7 +94,8 @@
   .card.t2 .tier-badge{background:var(--tier2);color:var(--ink)}
   .card.t3 .tier-badge{background:var(--tier3);color:var(--ink)}
 
-  .card-name{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px;line-height:1.2;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+  .card-name{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px;line-height:1.2;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+  .card-remaining{font-size:11px;color:var(--ink-light);font-family:"SF Mono",Monaco,monospace;margin-top:auto;text-align:right;letter-spacing:.5px}
   .card-role{font-size:9px;color:var(--ink-light);margin-bottom:6px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.3}
   .card-role .main-role{color:var(--ink);font-weight:700}
   .card-desc{font-size:10px;color:var(--ink-light);flex-grow:1;margin-bottom:8px;line-height:1.4;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
@@ -106,7 +107,7 @@
   .hand .card.empty{background:transparent;border:1px dashed var(--ink-light);box-shadow:none;cursor:default;display:flex;align-items:center;justify-content:center;color:var(--text-faint);font-size:10px;text-transform:uppercase;letter-spacing:2px;font-family:"SF Mono",Monaco,monospace}
 
   /* ACTIONS */
-  .actions{display:flex;flex-direction:column;gap:6px}
+  .actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;margin-top:auto}
   button{background:var(--surface);color:var(--text);border:1px solid var(--divider);border-radius:3px;padding:14px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s ease;font-family:"SF Mono",Monaco,monospace;text-transform:uppercase;letter-spacing:2px;text-align:left;display:flex;justify-content:space-between;align-items:center}
   button:hover:not(:disabled){border-color:var(--text-dim);background:var(--surface-2)}
   button:disabled{opacity:.35;cursor:not-allowed}
@@ -120,7 +121,7 @@
   button.primary .cost{color:var(--bg);opacity:.7}
 
   /* PICK SCREEN */
-  .pick-screen{padding:20px 0}
+  .pick-screen{padding:10px 0;flex:1;overflow-y:auto}
   .pick-header{text-align:center;margin-bottom:24px}
   .pick-header .eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:4px;color:var(--amber);font-family:"SF Mono",Monaco,monospace;margin-bottom:8px}
   .pick-header h2{font-size:28px;color:var(--text);letter-spacing:-.5px;margin-bottom:4px}
@@ -134,7 +135,7 @@
   .pick-card.t3 .tier-stripe{background:var(--tier3)}
 
   /* END SCREEN */
-  .end-screen{padding:60px 20px 40px;text-align:center}
+  .end-screen{padding:20px;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;overflow-y:auto}
   .end-screen .eyebrow{font-size:11px;letter-spacing:6px;text-transform:uppercase;color:var(--text-faint);font-family:"SF Mono",Monaco,monospace;margin-bottom:16px}
   .end-screen h1{font-size:56px;letter-spacing:-2px;margin-bottom:12px;font-weight:800}
   .end-screen.win h1{color:var(--ok)}
@@ -148,7 +149,7 @@
   .end-screen .restart-btn{margin-top:8px;max-width:280px;margin-left:auto;margin-right:auto;justify-content:center}
 
   /* INTRO */
-  .intro{padding:60px 20px 40px;text-align:center}
+  .intro{padding:20px;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center}
   .intro .eyebrow{font-family:"SF Mono",Monaco,monospace;font-size:11px;letter-spacing:8px;text-transform:uppercase;color:var(--warning);margin-bottom:24px}
   .intro h1{font-size:72px;letter-spacing:-3px;color:var(--text);margin-bottom:16px;font-weight:800;line-height:.95}
   .intro h1 .red{color:var(--warning);text-shadow:0 0 32px var(--warning-glow)}
@@ -204,7 +205,7 @@
     #game{padding:10px;padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
 
     /* Status */
-    .status{padding:14px 16px 12px;margin-bottom:12px}
+    .status{padding:12px 14px 10px;margin-bottom:8px}
     .reserve-label{font-size:9px;letter-spacing:2px}
     .timer{font-size:42px;letter-spacing:-1px}
     .timer .unit{font-size:20px}
@@ -213,34 +214,31 @@
     .fuel-bar{margin-top:12px}
 
     /* Substats — 4 columns, compact */
-    .substats{margin-bottom:12px}
-    .substat{padding:8px 3px}
-    .substat .v{font-size:15px}
+    .substats{margin-bottom:8px}
+    .substat{padding:6px 3px}
+    .substat .v{font-size:14px}
     .substat .k{font-size:8px;letter-spacing:1.2px}
 
     /* Encounter */
-    .encounter{padding:16px;margin-bottom:12px}
-    .enc-icon{font-size:28px;margin-bottom:8px}
-    .enc-tier{font-size:9px;padding:2px 5px;margin-bottom:8px}
-    .enc-name{font-size:17px;line-height:1.25;margin-bottom:6px}
-    .enc-desc{font-size:13px;line-height:1.55}
+    .encounter{padding:12px;margin-bottom:8px}
+    .enc-icon{font-size:24px;margin-bottom:6px}
+    .enc-tier{font-size:9px;padding:2px 5px;margin-bottom:6px}
+    .enc-name{font-size:16px;line-height:1.25;margin-bottom:4px}
+    .enc-desc{font-size:12px;line-height:1.5}
 
     /* Section labels */
-    .section-label{font-size:9px;letter-spacing:2px;margin-bottom:8px}
+    .section-label{font-size:9px;letter-spacing:2px;margin-bottom:6px}
 
-    /* Hand cards — compact, hide flavor text */
-    .hand{gap:5px;margin-bottom:12px}
-    .card{min-height:128px;padding:10px 7px 8px}
+    /* Hand cards */
+    .hand{gap:5px;margin-bottom:8px}
+    .card{min-height:88px;padding:10px 7px 8px}
     .card .tier-stripe{height:4px}
     .card-header{margin-top:5px;margin-bottom:6px}
     .card-cost{font-size:18px}
     .card-cost .s{font-size:11px}
     .tier-badge{font-size:9px;padding:1.5px 4px}
     .card-name{font-size:11px;margin-bottom:4px;line-height:1.15}
-    /* On mobile: drop role text + flavor desc to keep card scannable */
-    .hand .card .card-role,.hand .card .card-desc{display:none}
-    .card-tags{gap:2px}
-    .tag{font-size:7.5px;padding:1.5px 4px;letter-spacing:.3px}
+    .card-remaining{font-size:10px}
 
     /* Action buttons — big tap targets */
     .actions{gap:6px}
@@ -260,7 +258,7 @@
     .pick-card .card-desc{font-size:9.5px;line-height:1.45}
 
     /* Intro */
-    .intro{padding:40px 16px 32px}
+    .intro{padding:16px}
     .intro .eyebrow{font-size:10px;letter-spacing:5px;margin-bottom:18px}
     .intro h1{font-size:56px;letter-spacing:-2px}
     .intro .tagline{font-size:15px}
@@ -268,7 +266,7 @@
     .intro-actions{max-width:100%}
 
     /* End screen */
-    .end-screen{padding:40px 16px 32px}
+    .end-screen{padding:16px}
     .end-screen .eyebrow{letter-spacing:4px}
     .end-screen h1{font-size:42px;letter-spacing:-1px}
     .end-screen .flavor{font-size:14px;margin-bottom:24px}
@@ -306,11 +304,11 @@
     .enc-desc{font-size:12px}
     .substat .v{font-size:14px}
     .substat .k{font-size:7.5px;letter-spacing:1px}
-    .card{min-height:118px;padding:8px 6px 7px}
+    .card{min-height:78px;padding:8px 6px 7px}
     .card-cost{font-size:16px}
     .card-name{font-size:10px}
+    .card-remaining{font-size:9px}
     .tier-badge{font-size:8px}
-    .tag{font-size:7px;padding:1px 3px}
     .intro h1{font-size:48px}
     .end-screen h1{font-size:36px}
     button{font-size:11px;padding:13px 12px;letter-spacing:1px}
@@ -1013,7 +1011,7 @@ function renderGame(){
     if(state.hand[i])cells.push(renderHandCard(state.hand[i]));
     else cells.push(h('div',{class:'card empty'},'Trống'));
   }
-  root.appendChild(h('div',null,
+  root.appendChild(h('div',{style:'flex-shrink:0'},
     h('div',{class:'section-label'},'Tay bài — chọn 1 lá để chơi'),
     h('div',{class:'hand'},...cells)
   ));
@@ -1042,13 +1040,20 @@ function renderGame(){
   }
 }
 
+function countCardInDeck(cardId){
+  let c=0;
+  for(const x of state.hand) if(x.id===cardId) c++;
+  for(const x of state.deck) if(x.id===cardId) c++;
+  return c;
+}
+
 function renderHandCard(card){
   const selected=state.selectedUid===card.uid;
   const enc=state.currentEncounter;
   const cost=getCardCost(card,enc);
-  const isMain=card.mainRole===enc.type;
-  const isSub=!isMain&&card.subRole===enc.type;
   const tierCls='t'+card.tier;
+  const remaining=countCardInDeck(card.id);
+  const total=state.hand.length+state.deck.length;
   return h('div',{class:'card '+tierCls+(selected?' selected':''),onclick:()=>selectCard(card.uid)},
     h('div',{class:'tier-stripe'}),
     h('div',{class:'card-header'},
@@ -1056,16 +1061,7 @@ function renderHandCard(card){
       h('div',{class:'tier-badge'},card.stars)
     ),
     h('div',{class:'card-name'},card.name),
-    h('div',{class:'card-role'},
-      h('span',{class:'main-role'},card.mainDesc),
-      h('br'),
-      '↳ '+card.subDesc
-    ),
-    h('div',{class:'card-desc'},card.desc),
-    h('div',{class:'card-tags'},
-      h('span',{class:'tag'+(isMain?' main':'')},'chính: '+card.mainRole),
-      h('span',{class:'tag'+(isSub?' sub':'')},'phụ: '+card.subRole)
-    )
+    h('div',{class:'card-remaining'},remaining+'/'+total)
   );
 }
 
