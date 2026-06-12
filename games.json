@@ -9,5 +9,25 @@
     "path": "games/dogpile/index.html",
     "thumb": "games/dogpile/thumb.jpg",
     "added": "2025-06-09"
+  },
+  {
+    "id": "apocalypse_pile",
+    "title": "Apocalypse Pile",
+    "description": "Kéo thả hình khối vào canvas để giải quyết các mối đe dọa trước khi hết lượt thả. Mechanic: kéo thả & vật lý.",
+    "description_en": "Drag and drop shapes onto the canvas to neutralize incoming threats before you run out of drops. Mechanic: drag-and-drop & physics.",
+    "description_zh": "将形状拖放到画布上，在投掷次数耗尽前消除威胁。机制：拖放与物理。",
+    "mechanic": "Drag & Drop / Physics",
+    "path": "games/apocalypse_pile/index.html",
+    "added": "2026-06-12"
+  },
+  {
+    "id": "countdown_rouge",
+    "title": "Countdown Rouge",
+    "description": "Chọn thẻ bài để vượt qua các biến cố trước khi đồng hồ về 0. Mechanic: roguelike & card.",
+    "description_en": "Pick cards to survive encounters before the timer hits zero. Mechanic: roguelike & card.",
+    "description_zh": "选择卡牌在计时结束前度过难关。机制：Roguelike与卡牌。",
+    "mechanic": "Roguelike / Card",
+    "path": "games/countdown_rouge/index.html",
+    "added": "2026-06-12"
   }
 ]
