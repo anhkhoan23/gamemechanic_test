@@ -29,5 +29,15 @@
     "mechanic": "Roguelike / Card",
     "path": "games/countdown_rouge/index.html",
     "added": "2026-06-12"
+  },
+  {
+    "id": "matchcooking",
+    "title": "Match Cooking",
+    "description": "Chọn nguyên liệu từ lưới, ghép 3 cùng loại để nấu, hoàn thành công thức trước khi khay bị đầy. Mechanic: match-3 & cooking.",
+    "description_en": "Pick ingredients from the grid, match 3 of a kind to cook them, complete recipes before the tray overflows. Mechanic: match-3 & cooking.",
+    "description_zh": "从格子中挑选食材，凑齐3个相同食材即可烹饪，在托盘溢出前完成所有食谱。机制：三消与烹饪。",
+    "mechanic": "Match-3 / Cooking",
+    "path": "games/matchcooking/index.html",
+    "added": "2026-06-14"
   }
 ]

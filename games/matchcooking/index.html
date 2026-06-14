@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>World Cuisine — Phở Bò</title>
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Roboto, sans-serif;
+  background: #1a1a1a;
+  touch-action: manipulation;
+}
+
+/* ============================================================
+   DEVICE FRAME (desktop only)
+   App container is 402x874 (iPhone 16 Pro logical pixels)
+   ============================================================ */
+.device-bg {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #2a2622 0%, #0f0d0b 100%);
+}
+
+.app {
+  width: 402px;
+  height: 874px;
+  max-width: 100vw;
+  max-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background: #f5ecdc;
+}
+
+/* Desktop: show phone frame */
+@media (min-width: 500px) and (min-height: 900px) {
+  .app {
+    border-radius: 50px;
+    box-shadow:
+      0 0 0 12px #1c1c1e,
+      0 0 0 14px #3a3a3c,
+      0 30px 60px rgba(0,0,0,0.5);
+  }
+  .app::before {
+    /* Dynamic Island */
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 34px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 1000;
+    pointer-events: none;
+  }
+}
+
+/* Mobile: full screen */
+@media (max-width: 499px), (max-height: 899px) {
+  .app {
+    width: 100vw;
+    height: 100vh;
+  }
+}
+
+/* ============================================================
+   SCREEN MANAGEMENT
+   ============================================================ */
+.screen {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 500ms ease;
+}
+.screen.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Safe area utility */
+.safe-top { padding-top: 50px; }
+.safe-bottom { padding-bottom: 34px; }
+
+/* ============================================================
+   MENU SCREEN
+   ============================================================ */
+#screen-menu {
+  background:
+    radial-gradient(circle at top, #fff5e0 0%, transparent 60%),
+    linear-gradient(180deg, #f9efd9 0%, #f0e3c4 100%);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.menu-header {
+  padding: 60px 24px 16px;
+  text-align: center;
+}
+.menu-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #8b2e2e;
+  letter-spacing: -0.5px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.menu-subtitle {
+  font-size: 14px;
+  color: #8a6d4a;
+  margin-top: 6px;
+  letter-spacing: 0.5px;
+}
+
+.menu-divider {
+  width: 40px;
+  height: 3px;
+  background: #d4a039;
+  border-radius: 2px;
+  margin: 16px auto;
+}
+
+.dish-list {
+  padding: 8px 16px 100px;
+}
+
+/* Featured dish card (Phở) */
+.dish-card-featured {
+  background: linear-gradient(135deg, #fffaf0 0%, #fceac0 100%);
+  border-radius: 24px;
+  padding: 24px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(139, 46, 46, 0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+  border: 2px solid #e8c976;
+  cursor: pointer;
+  position: relative;
+  text-align: center;
+  transition: transform 200ms ease;
+}
+.dish-card-featured:active {
+  transform: scale(0.97);
+}
+.dish-card-featured .dish-emoji {
+  font-size: 80px;
+  line-height: 1;
+  display: block;
+  margin-bottom: 8px;
+  transition: filter 400ms ease;
+}
+.dish-card-featured.incomplete .dish-emoji {
+  filter: grayscale(1) brightness(0.85);
+}
+.dish-card-featured .dish-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #5a2020;
+  letter-spacing: -0.3px;
+}
+.dish-card-featured .dish-flag {
+  font-size: 18px;
+  margin-left: 6px;
+}
+.dish-card-featured .star-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 18px;
+}
+.dish-card-featured .star {
+  filter: grayscale(1) brightness(0.7);
+  opacity: 0.5;
+  transition: all 400ms ease;
+}
+.dish-card-featured .star.lit {
+  filter: none;
+  opacity: 1;
+  text-shadow: 0 0 8px rgba(255, 200, 50, 0.6);
+}
+.dish-card-featured .completed-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 22px;
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.dish-card-featured.complete .completed-badge {
+  opacity: 1;
+}
+
+/* Grid for locked dishes */
+.dish-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.dish-card-locked {
+  background: rgba(255,255,255,0.4);
+  border: 1px dashed #b89a6a;
+  border-radius: 16px;
+  padding: 16px 8px;
+  text-align: center;
+  position: relative;
+  opacity: 0.7;
+}
+.dish-card-locked .dish-emoji {
+  font-size: 40px;
+  filter: grayscale(1) brightness(0.7);
+  display: block;
+  margin-bottom: 4px;
+}
+.dish-card-locked .dish-name {
+  font-size: 13px;
+  color: #6e5a3a;
+  font-weight: 600;
+}
+.dish-card-locked .dish-soon {
+  font-size: 10px;
+  color: #a08762;
+  margin-top: 2px;
+}
+.dish-card-locked .lock-icon {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 14px;
+}
+.dish-card-locked.shake {
+  animation: shake 400ms ease;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.menu-footer {
+  text-align: center;
+  padding: 16px 0 50px;
+}
+.reset-btn {
+  background: transparent;
+  border: 1px solid #b89a6a;
+  color: #8a6d4a;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms;
+  z-index: 2000;
+}
+.toast.show { opacity: 1; }
+
+/* ============================================================
+   GAMEPLAY SCREEN
+   ============================================================ */
+#screen-game {
+  background:
+    linear-gradient(180deg, #f9efd9 0%, #f5e6c0 50%, #ead9b5 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top bar */
+.top-bar {
+  height: 60px;
+  padding: 16px 16px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  margin-top: 50px; /* safe area */
+}
+.menu-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  background: rgba(255,255,255,0.6);
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5a2020;
+  font-family: inherit;
+}
+.level-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #5a2020;
+  text-align: center;
+  flex: 1;
+  letter-spacing: -0.2px;
+}
+.stars-track {
+  display: flex;
+  gap: 1px;
+  font-size: 12px;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 12px;
+  min-width: 44px;
+  justify-content: center;
+}
+.stars-track .star {
+  filter: grayscale(1) brightness(0.6);
+  opacity: 0.5;
+}
+.stars-track .star.lit {
+  filter: none;
+  opacity: 1;
+}
+
+/* Timer bar */
+.timer-bar {
+  text-align: center;
+  padding: 2px 0 8px;
+  flex-shrink: 0;
+}
+.timer-display {
+  display: inline-block;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #5a2020;
+  background: rgba(255,255,255,0.85);
+  padding: 6px 18px;
+  border-radius: 14px;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transition: background 200ms, color 200ms;
+}
+.timer-display.warning {
+  background: #f4c542;
+  color: #5a3a00;
+}
+.timer-display.critical {
+  background: #c0392b;
+  color: white;
+  animation: timerPulse 0.6s infinite ease-in-out;
+}
+@keyframes timerPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* Goals tracker */
+.goals-bar {
+  padding: 4px 16px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.goal-chip {
+  background: rgba(255,255,255,0.75);
+  padding: 6px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a2020;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: all 300ms;
+}
+.goal-chip.done {
+  background: #a8d8a8;
+  color: #2d5a2d;
+}
+.goal-chip .progress {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* Play area */
+.play-area {
+  flex: 1;
+  position: relative;
+  margin: 4px 12px;
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at top, rgba(255,255,255,0.6) 0%, transparent 70%),
+    linear-gradient(160deg, #e8d4a8 0%, #d4b878 100%);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.15), inset 0 -2px 8px rgba(255,255,255,0.3);
+  overflow: hidden;
+}
+
+.item {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  cursor: pointer;
+  background: rgba(255,255,255,0.85);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8);
+  transition: transform 150ms ease;
+  z-index: 1;
+}
+.item:active {
+  transform: scale(0.9);
+}
+.item.flying {
+  z-index: 100;
+  pointer-events: none;
+  transition: all 320ms cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Tray */
+.tray-wrapper {
+  padding: 8px 12px 4px;
+  flex-shrink: 0;
+}
+.tray-label {
+  text-align: center;
+  font-size: 11px;
+  color: #8a6d4a;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.tray {
+  display: flex;
+  gap: 4px;
+  justify-content: space-between;
+  padding: 8px;
+  background: linear-gradient(180deg, #6b3a1a 0%, #4a2810 100%);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.tray-slot {
+  flex: 1;
+  aspect-ratio: 1;
+  background: rgba(0,0,0,0.25);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  transition: transform 200ms ease;
+}
+.tray-slot.has-item {
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,1);
+}
+.tray-slot.matching {
+  animation: matchPop 400ms ease-out forwards;
+}
+@keyframes matchPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.3); background: #ffd700; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* Bottom button */
+.bottom-controls {
+  padding: 8px 16px 24px;
+  flex-shrink: 0;
+}
+.restart-btn {
+  width: 100%;
+  height: 44px;
+  background: rgba(139, 46, 46, 0.15);
+  border: 1px solid rgba(139, 46, 46, 0.3);
+  color: #8b2e2e;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.restart-btn:active {
+  background: rgba(139, 46, 46, 0.25);
+}
+
+/* ============================================================
+   POPUPS (lose, confirm)
+   ============================================================ */
+.popup-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms;
+}
+.popup-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.popup {
+  background: linear-gradient(180deg, #fffaf0 0%, #fceac0 100%);
+  border-radius: 24px;
+  padding: 28px 24px;
+  margin: 0 32px;
+  text-align: center;
+  max-width: 320px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+  transform: scale(0.85);
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.popup-overlay.show .popup {
+  transform: scale(1);
+}
+.popup-emoji {
+  font-size: 56px;
+  margin-bottom: 8px;
+}
+.popup-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #5a2020;
+  margin-bottom: 6px;
+}
+.popup-text {
+  font-size: 14px;
+  color: #8a6d4a;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+.popup-btn {
+  display: block;
+  width: 100%;
+  height: 48px;
+  border-radius: 14px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  margin-bottom: 8px;
+}
+.popup-btn.primary {
+  background: #8b2e2e;
+  color: white;
+}
+.popup-btn.secondary {
+  background: transparent;
+  color: #8a6d4a;
+  border: 1px solid #b89a6a;
+}
+.popup-btn:active { transform: scale(0.97); }
+
+/* ============================================================
+   REVEAL SCREENS
+   ============================================================ */
+.reveal-screen {
+  background: radial-gradient(ellipse at center, #3a2418 0%, #1a0e08 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px 40px;
+}
+
+.reveal-stars {
+  display: flex;
+  gap: 6px;
+  font-size: 22px;
+  margin-bottom: 32px;
+}
+.reveal-stars .star {
+  filter: grayscale(1) brightness(0.5);
+  opacity: 0.6;
+  transition: all 600ms ease;
+}
+.reveal-stars .star.lit {
+  filter: none;
+  opacity: 1;
+  text-shadow: 0 0 12px rgba(255, 200, 50, 0.8);
+  transform: scale(1.2);
+}
+
+.reveal-stage {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.reveal-text {
+  text-align: center;
+  margin: 24px 0;
+  color: #fff8e0;
+}
+.reveal-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin-bottom: 6px;
+}
+.reveal-subtitle {
+  font-size: 14px;
+  color: #d4a039;
+  opacity: 0.9;
+}
+
+.reveal-btn {
+  background: linear-gradient(135deg, #d4a039 0%, #b8861f 100%);
+  border: none;
+  color: white;
+  padding: 14px 32px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(212, 160, 57, 0.4);
+  font-family: inherit;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 500ms ease;
+}
+.reveal-btn.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-btn:active { transform: scale(0.97); }
+
+/* Flying ingredient particles */
+.fly-particle {
+  position: absolute;
+  font-size: 40px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Reveal 1: prep plate */
+.prep-plate {
+  font-size: 140px;
+  opacity: 0;
+  transform: scale(0.3) rotate(-20deg);
+  transition: all 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.prep-plate.show {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+/* Reveal 2: boiling pot */
+.boil-pot {
+  font-size: 160px;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: all 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+.boil-pot.show {
+  opacity: 1;
+  transform: scale(1);
+  animation: gentleBob 2s ease-in-out infinite alternate;
+}
+@keyframes gentleBob {
+  from { transform: scale(1) translateY(0); }
+  to { transform: scale(1.03) translateY(-4px); }
+}
+.steam {
+  position: absolute;
+  font-size: 32px;
+  opacity: 0;
+  animation: rise 2.5s ease-out infinite;
+}
+@keyframes rise {
+  0% { opacity: 0; transform: translateY(0) scale(0.5); }
+  20% { opacity: 0.7; }
+  100% { opacity: 0; transform: translateY(-120px) scale(1.3); }
+}
+
+/* Reveal 3: final bowl */
+#screen-reveal3 {
+  background: linear-gradient(180deg, #3a2418 0%, #5a3828 40%, #8b5a3a 100%);
+}
+.final-bowl-stage {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.final-bowl {
+  font-size: 200px;
+  opacity: 0;
+  transform: scale(0.3);
+  transition: all 900ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  z-index: 2;
+}
+.final-bowl.show {
+  opacity: 1;
+  transform: scale(1);
+}
+.bowl-topping {
+  position: absolute;
+  font-size: 32px;
+  opacity: 0;
+  transform: scale(0) translateY(-100px);
+  transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 3;
+}
+.bowl-topping.show {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+.side-utensil {
+  position: absolute;
+  font-size: 60px;
+  opacity: 0;
+  transition: all 500ms ease;
+  z-index: 1;
+}
+.side-utensil.show { opacity: 1; }
+
+.final-title {
+  font-size: 26px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.3px;
+  margin-bottom: 4px;
+}
+</style>
+</head>
+<body>
+<div class="device-bg">
+  <div class="app">
+
+    <!-- ========== MENU SCREEN ========== -->
+    <div id="screen-menu" class="screen active">
+      <div class="menu-header">
+        <div class="menu-title">World Cuisine</div>
+        <div class="menu-divider"></div>
+        <div class="menu-subtitle">Chọn món để nấu</div>
+      </div>
+      <div class="dish-list" id="dish-list">
+        <!-- Phở Bò featured card -->
+        <div class="dish-card-featured incomplete" id="card-pho">
+          <span class="completed-badge">✅</span>
+          <span class="dish-emoji">🍜</span>
+          <div class="dish-name">Phở Bò <span class="dish-flag">🇻🇳</span></div>
+          <div class="star-row" id="menu-star-row">
+            <span class="star">⭐</span><span class="star">⭐</span>
+            <span class="star">⭐</span><span class="star">⭐</span>
+            <span class="star">⭐</span><span class="star">⭐</span>
+            <span class="star">⭐</span>
+          </div>
+        </div>
+
+        <!-- Locked dishes -->
+        <div class="dish-grid">
+          <div class="dish-card-locked" data-name="Pizza Margherita">
+            <span class="lock-icon">🔒</span>
+            <span class="dish-emoji">🍕</span>
+            <div class="dish-name">Pizza 🇮🇹</div>
+            <div class="dish-soon">Coming soon</div>
+          </div>
+          <div class="dish-card-locked" data-name="Sushi">
+            <span class="lock-icon">🔒</span>
+            <span class="dish-emoji">🍣</span>
+            <div class="dish-name">Sushi 🇯🇵</div>
+            <div class="dish-soon">Coming soon</div>
+          </div>
+          <div class="dish-card-locked" data-name="Croissant">
+            <span class="lock-icon">🔒</span>
+            <span class="dish-emoji">🥐</span>
+            <div class="dish-name">Croissant 🇫🇷</div>
+            <div class="dish-soon">Coming soon</div>
+          </div>
+          <div class="dish-card-locked" data-name="Taco">
+            <span class="lock-icon">🔒</span>
+            <span class="dish-emoji">🌮</span>
+            <div class="dish-name">Taco 🇲🇽</div>
+            <div class="dish-soon">Coming soon</div>
+          </div>
+          <div class="dish-card-locked" data-name="Curry">
+            <span class="lock-icon">🔒</span>
+            <span class="dish-emoji">🍛</span>
+            <div class="dish-name">Curry 🇮🇳</div>
+            <div class="dish-soon">Coming soon</div>
+          </div>
+        </div>
+
+        <div class="menu-footer">
+          <button class="reset-btn" id="reset-btn">↺ Reset progress</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== GAMEPLAY SCREEN ========== -->
+    <div id="screen-game" class="screen">
+      <div class="top-bar">
+        <button class="menu-btn" id="back-to-menu">←</button>
+        <div class="level-name" id="level-name">Màn 1</div>
+        <div class="stars-track" id="game-stars">
+          <span class="star">⭐</span><span class="star">⭐</span>
+          <span class="star">⭐</span><span class="star">⭐</span>
+          <span class="star">⭐</span><span class="star">⭐</span>
+          <span class="star">⭐</span>
+        </div>
+      </div>
+      <div class="timer-bar">
+        <div class="timer-display" id="timer-display">⏱ 1:00</div>
+      </div>
+      <div class="goals-bar" id="goals-bar"></div>
+      <div class="play-area" id="play-area"></div>
+      <div class="tray-wrapper">
+        <div class="tray-label">Bàn bếp</div>
+        <div class="tray" id="tray">
+          <div class="tray-slot"></div>
+          <div class="tray-slot"></div>
+          <div class="tray-slot"></div>
+          <div class="tray-slot"></div>
+          <div class="tray-slot"></div>
+          <div class="tray-slot"></div>
+          <div class="tray-slot"></div>
+        </div>
+      </div>
+      <div class="bottom-controls">
+        <button class="restart-btn" id="restart-btn">↻ Chơi lại màn này</button>
+      </div>
+
+      <!-- Lose popup (dynamic content) -->
+      <div class="popup-overlay" id="lose-popup">
+        <div class="popup">
+          <div class="popup-emoji" id="lose-emoji">😔</div>
+          <div class="popup-title" id="lose-title">Bàn bếp đã đầy!</div>
+          <div class="popup-text" id="lose-text">Hãy cẩn thận với nguyên liệu nhiễu — chỉ chọn đúng nguyên liệu của món Phở.</div>
+          <button class="popup-btn primary" id="lose-ads" style="display:none;">📺 Xem ads +20s</button>
+          <button class="popup-btn primary" id="lose-retry">↻ Chơi lại</button>
+          <button class="popup-btn secondary" id="lose-menu">Về bộ sưu tập</button>
+        </div>
+      </div>
+
+      <!-- Level complete popup -->
+      <div class="popup-overlay" id="complete-popup">
+        <div class="popup">
+          <div class="popup-emoji">🎉</div>
+          <div class="popup-title" id="complete-title">Hoàn thành!</div>
+          <div class="popup-text" id="complete-text">Bạn đã thu đủ nguyên liệu cho màn này.</div>
+          <button class="popup-btn primary" id="complete-continue">Tiếp tục →</button>
+        </div>
+      </div>
+
+      <!-- Quit confirm popup -->
+      <div class="popup-overlay" id="quit-popup">
+        <div class="popup">
+          <div class="popup-emoji">🤔</div>
+          <div class="popup-title">Bỏ dở màn này?</div>
+          <div class="popup-text">Tiến độ màn hiện tại sẽ không được lưu.</div>
+          <button class="popup-btn primary" id="quit-confirm">Bỏ về menu</button>
+          <button class="popup-btn secondary" id="quit-cancel">Tiếp tục chơi</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== REVEAL 1 SCREEN ========== -->
+    <div id="screen-reveal1" class="screen reveal-screen">
+      <div class="reveal-stars" id="reveal1-stars">
+        <span class="star">⭐</span><span class="star">⭐</span>
+        <span class="star">⭐</span><span class="star">⭐</span>
+        <span class="star">⭐</span><span class="star">⭐</span>
+        <span class="star">⭐</span>
+      </div>
+      <div class="reveal-stage" id="reveal1-stage">
+        <div class="prep-plate" id="prep-plate">🥘</div>
+      </div>
+      <div class="reveal-text">
+        <div class="reveal-title">Nguyên liệu cơ bản đã sẵn sàng!</div>
+        <div class="reveal-subtitle">Thịt, củ rễ, gia vị nướng — bộ ba khởi đầu</div>
+      </div>
+      <button class="reveal-btn" id="reveal1-continue">Tiếp tục →</button>
+    </div>
+
+    <!-- ========== REVEAL 2 SCREEN ========== -->
+    <div id="screen-reveal2" class="screen reveal-screen">
+      <div class="reveal-stars" id="reveal2-stars">
+        <span class="star">⭐</span><span class="star">⭐</span>
+        <span class="star">⭐</span><span class="star">⭐</span>
+        <span class="star">⭐</span><span class="star">⭐</span>
+        <span class="star">⭐</span>
+      </div>
+      <div class="reveal-stage" id="reveal2-stage">
+        <div class="boil-pot" id="boil-pot">🍲</div>
+      </div>
+      <div class="reveal-text">
+        <div class="reveal-title">Nồi nước dùng đang sôi...</div>
+        <div class="reveal-subtitle">Gia vị thấm, hương thơm lan tỏa</div>
+      </div>
+      <button class="reveal-btn" id="reveal2-continue">Tiếp tục →</button>
+    </div>
+
+    <!-- ========== REVEAL 3 SCREEN (FINAL) ========== -->
+    <div id="screen-reveal3" class="screen reveal-screen">
+      <div class="reveal-stars" id="reveal3-stars">
+        <span class="star">⭐</span><span class="star">⭐</span>
+        <span class="star">⭐</span><span class="star">⭐</span>
+        <span class="star">⭐</span><span class="star">⭐</span>
+        <span class="star">⭐</span>
+      </div>
+      <div class="reveal-stage">
+        <div class="final-bowl-stage" id="final-stage">
+          <div class="final-bowl" id="final-bowl">🍜</div>
+        </div>
+      </div>
+      <div class="reveal-text">
+        <div class="final-title">PHỞ BÒ HOÀN THÀNH! 🇻🇳</div>
+        <div class="reveal-subtitle">Món ăn truyền thống Việt Nam</div>
+      </div>
+      <button class="reveal-btn" id="reveal3-continue">Về bộ sưu tập</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   LEVEL CONFIGURATION
+   Easy to extend: add more dishes by adding more level groups
+   ============================================================ */
+const LEVELS = [
+  {
+    id: 1,
+    name: 'Màn 1 — Đi chợ sáng',
+    targets: [
+      { emoji: '🦴', name: 'Xương bò', count: 3 },
+      { emoji: '🥩', name: 'Thịt bò', count: 3 },
+      { emoji: '🍜', name: 'Bánh phở', count: 3 }
+    ],
+    distractors: ['🧀', '🍕', '🫑', '🥑', '🍣', '🥖', '🍤']
+  },
+  {
+    id: 2,
+    name: 'Màn 2 — Củ & rễ',
+    targets: [
+      { emoji: '🧅', name: 'Hành tây', count: 3 },
+      { emoji: '🫚', name: 'Gừng', count: 3 }
+    ],
+    distractors: ['🥕', '🥔', '🧄', '🌽', '🍠', '🥒']
+  },
+  {
+    id: 3,
+    name: 'Màn 3 — Kệ gia vị nướng',
+    targets: [
+      { emoji: '⭐', name: 'Hoa hồi', count: 3 },
+      { emoji: '🪵', name: 'Quế', count: 3 },
+      { emoji: '🟤', name: 'Thảo quả', count: 3 }
+    ],
+    distractors: ['🌿', '🍃', '🌶️', '🍵', '🥜']
+  },
+  // REVEAL 1 inserted between level 3 and 4
+  {
+    id: 4,
+    name: 'Màn 4 — Gia vị nêm',
+    targets: [
+      { emoji: '🍶', name: 'Nước mắm', count: 3 },
+      { emoji: '🧂', name: 'Muối', count: 3 }
+    ],
+    distractors: ['🍯', '🍷', '🥛', '🫙']
+  },
+  {
+    id: 5,
+    name: 'Màn 5 — Rau ăn kèm',
+    targets: [
+      { emoji: '🌱', name: 'Hành lá', count: 3 },
+      { emoji: '🌿', name: 'Giá đỗ', count: 3 },
+      { emoji: '🍋', name: 'Chanh', count: 3 },
+      { emoji: '🌶️', name: 'Ớt', count: 3 }
+    ],
+    distractors: ['🥬', '🥦', '🍅', '🫑', '🍊', '🥝']
+  },
+  {
+    id: 6,
+    name: 'Màn 6 — Dụng cụ nấu',
+    targets: [
+      { emoji: '🍲', name: 'Nồi', count: 3 },
+      { emoji: '🪵', name: 'Thớt', count: 3 },
+      { emoji: '🥄', name: 'Vá', count: 3 }
+    ],
+    distractors: ['🍳', '🔪', '🍴', '☕']
+  },
+  // REVEAL 2 inserted between level 6 and 7
+  {
+    id: 7,
+    name: 'Màn 7 — Bàn ăn',
+    targets: [
+      { emoji: '🍜', name: 'Tô phở', count: 3 },
+      { emoji: '🥢', name: 'Đũa', count: 3 },
+      { emoji: '🥄', name: 'Muỗng', count: 3 }
+    ],
+    distractors: ['🍽️', '🍵', '🥛', '🍷']
+  }
+];
+
+const REVEAL_AFTER = { 3: 1, 6: 2, 7: 3 }; // level id -> reveal num
+const LEVEL_TIME = 60;    // seconds per level
+const ADS_BONUS_TIME = 20; // seconds added when "watching ads"
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = {
+  currentScreen: 'menu',
+  currentLevelIdx: 0,
+  tray: [],         // array of {emoji, slotIdx}
+  collected: {},    // {emoji: count}
+  starsEarned: 0,
+  phoCompleted: false,
+  busy: false,      // block input during animations
+  timeLeft: LEVEL_TIME,
+  timerInterval: null
+};
+
+/* ============================================================
+   PERSISTENCE
+   ============================================================ */
+function saveProgress() {
+  try {
+    localStorage.setItem('worldcuisine_pho', JSON.stringify({
+      completed: state.phoCompleted
+    }));
+  } catch (e) {}
+}
+function loadProgress() {
+  try {
+    const data = JSON.parse(localStorage.getItem('worldcuisine_pho') || '{}');
+    state.phoCompleted = !!data.completed;
+  } catch (e) {
+    state.phoCompleted = false;
+  }
+}
+function resetProgress() {
+  localStorage.removeItem('worldcuisine_pho');
+  state.phoCompleted = false;
+  updateMenuUI();
+  showToast('Tiến độ đã được reset');
+}
+
+/* ============================================================
+   AUDIO (Web Audio API)
+   Initialized on first user interaction (iOS requirement)
+   ============================================================ */
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+function tone(freq, dur = 0.15, vol = 0.2, type = 'sine', delay = 0) {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime + delay;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t);
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(vol, t + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(t);
+  osc.stop(t + dur);
+}
+function playTap() { tone(600, 0.05, 0.1, 'square'); }
+function playMatch() {
+  tone(523, 0.12, 0.15, 'triangle', 0);
+  tone(659, 0.12, 0.15, 'triangle', 0.08);
+  tone(784, 0.18, 0.18, 'triangle', 0.16);
+}
+function playLose() {
+  tone(200, 0.3, 0.2, 'sawtooth');
+  tone(150, 0.4, 0.18, 'sawtooth', 0.1);
+}
+function playWinLevel() {
+  tone(523, 0.1, 0.15, 'triangle', 0);
+  tone(659, 0.1, 0.15, 'triangle', 0.08);
+  tone(784, 0.1, 0.15, 'triangle', 0.16);
+  tone(1047, 0.25, 0.2, 'triangle', 0.24);
+}
+function playReveal() {
+  tone(440, 0.3, 0.15, 'sine', 0);
+  tone(554, 0.3, 0.15, 'sine', 0.1);
+  tone(659, 0.4, 0.18, 'sine', 0.2);
+  tone(880, 0.6, 0.15, 'sine', 0.3);
+}
+function playFanfare() {
+  // Big finish for dish completion
+  const notes = [523, 659, 784, 1047, 1319];
+  notes.forEach((f, i) => tone(f, 0.2, 0.18, 'triangle', i * 0.1));
+  tone(1568, 0.6, 0.2, 'triangle', 0.6);
+  tone(2093, 0.8, 0.15, 'sine', 0.8);
+}
+
+function playTick() {
+  tone(1200, 0.04, 0.08, 'square');
+}
+
+/* ============================================================
+   TIMER
+   ============================================================ */
+function startTimer(seconds) {
+  state.timeLeft = (seconds !== undefined) ? seconds : LEVEL_TIME;
+  updateTimerDisplay();
+  resumeTimer();
+}
+
+function resumeTimer() {
+  stopTimer();
+  state.timerInterval = setInterval(() => {
+    state.timeLeft -= 1;
+    updateTimerDisplay();
+    // Soft tick on last 5 seconds
+    if (state.timeLeft > 0 && state.timeLeft <= 5) {
+      playTick();
+    }
+    if (state.timeLeft <= 0) {
+      stopTimer();
+      onTimeUp();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (state.timerInterval) {
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
+  }
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-display');
+  if (!el) return;
+  const t = Math.max(0, state.timeLeft);
+  const m = Math.floor(t / 60);
+  const s = t % 60;
+  el.textContent = `⏱ ${m}:${s.toString().padStart(2, '0')}`;
+  el.classList.toggle('warning', t <= 15 && t > 5);
+  el.classList.toggle('critical', t <= 5);
+}
+
+function onTimeUp() {
+  if (state.currentScreen !== 'screen-game') return;
+  state.busy = true;
+  playLose();
+  showLosePopup('timeout');
+}
+
+/* ============================================================
+   SCREEN TRANSITIONS
+   ============================================================ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  state.currentScreen = id;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* ============================================================
+   MENU UI
+   ============================================================ */
+function updateMenuUI() {
+  const card = document.getElementById('card-pho');
+  const stars = document.querySelectorAll('#menu-star-row .star');
+  if (state.phoCompleted) {
+    card.classList.remove('incomplete');
+    card.classList.add('complete');
+    stars.forEach(s => s.classList.add('lit'));
+  } else {
+    card.classList.add('incomplete');
+    card.classList.remove('complete');
+    stars.forEach(s => s.classList.remove('lit'));
+  }
+}
+
+document.getElementById('card-pho').addEventListener('click', () => {
+  ensureAudio();
+  playTap();
+  state.currentLevelIdx = 0;
+  state.starsEarned = 0;
+  startLevel();
+});
+
+document.querySelectorAll('.dish-card-locked').forEach(card => {
+  card.addEventListener('click', () => {
+    ensureAudio();
+    playTap();
+    card.classList.remove('shake');
+    void card.offsetWidth; // reflow to restart anim
+    card.classList.add('shake');
+    showToast('🔒 ' + card.dataset.name + ' sẽ mở khóa sau');
+  });
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  ensureAudio();
+  playTap();
+  resetProgress();
+});
+
+/* ============================================================
+   LEVEL LIFECYCLE
+   ============================================================ */
+function startLevel() {
+  const level = LEVELS[state.currentLevelIdx];
+  state.tray = [];
+  state.collected = {};
+  level.targets.forEach(t => { state.collected[t.emoji] = 0; });
+  state.busy = false;
+
+  document.getElementById('level-name').textContent = level.name;
+  renderGameStars();
+  renderGoals();
+  clearTray();
+  spawnItems(level);
+  hidePopups();
+  showScreen('screen-game');
+  startTimer(LEVEL_TIME);
+}
+
+function renderGameStars() {
+  const stars = document.querySelectorAll('#game-stars .star');
+  stars.forEach((s, i) => {
+    s.classList.toggle('lit', i < state.starsEarned);
+  });
+}
+
+function renderGoals() {
+  const level = LEVELS[state.currentLevelIdx];
+  const bar = document.getElementById('goals-bar');
+  bar.innerHTML = '';
+  level.targets.forEach(t => {
+    const chip = document.createElement('div');
+    chip.className = 'goal-chip';
+    chip.dataset.emoji = t.emoji;
+    const got = state.collected[t.emoji] || 0;
+    chip.innerHTML = `<span>${t.emoji}</span><span class="progress">${got}/${t.count}</span>`;
+    if (got >= t.count) chip.classList.add('done');
+    bar.appendChild(chip);
+  });
+}
+
+function updateGoalChip(emoji) {
+  const level = LEVELS[state.currentLevelIdx];
+  const target = level.targets.find(t => t.emoji === emoji);
+  if (!target) return;
+  const chip = document.querySelector(`.goal-chip[data-emoji="${emoji}"]`);
+  if (!chip) return;
+  const got = state.collected[emoji] || 0;
+  chip.querySelector('.progress').textContent = `${got}/${target.count}`;
+  if (got >= target.count) chip.classList.add('done');
+}
+
+function clearTray() {
+  const slots = document.querySelectorAll('#tray .tray-slot');
+  slots.forEach(s => {
+    s.textContent = '';
+    s.classList.remove('has-item', 'matching');
+  });
+}
+
+/* ----- Item spawning -----
+   Use a grid with jitter to avoid overlap.
+   Play area is ~370px wide x ~520px tall.
+*/
+function spawnItems(level) {
+  const area = document.getElementById('play-area');
+  area.innerHTML = '';
+
+  // Build item pool: 3 of each target + 1-2 of each distractor
+  const pool = [];
+  level.targets.forEach(t => {
+    for (let i = 0; i < t.count; i++) pool.push(t.emoji);
+  });
+  level.distractors.forEach(d => {
+    const n = 1 + Math.floor(Math.random() * 2); // 1 or 2
+    for (let i = 0; i < n; i++) pool.push(d);
+  });
+
+  // Shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  // Grid placement: get actual area dims after layout
+  // Defer to next frame to get accurate measurements
+  requestAnimationFrame(() => {
+    const w = area.clientWidth;
+    const h = area.clientHeight;
+    const itemSize = 52;
+    const padding = 12;
+    const cols = 5;
+    const rows = Math.max(Math.ceil(pool.length / cols), 4);
+    const cellW = (w - padding * 2) / cols;
+    const cellH = (h - padding * 2) / rows;
+
+    pool.forEach((emoji, idx) => {
+      const r = Math.floor(idx / cols);
+      const c = idx % cols;
+      const jitterX = (Math.random() - 0.5) * 10;
+      const jitterY = (Math.random() - 0.5) * 10;
+      const x = padding + c * cellW + (cellW - itemSize) / 2 + jitterX;
+      const y = padding + r * cellH + (cellH - itemSize) / 2 + jitterY;
+
+      const el = document.createElement('div');
+      el.className = 'item';
+      el.textContent = emoji;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.dataset.emoji = emoji;
+      el.addEventListener('click', () => onItemTap(el));
+      area.appendChild(el);
+    });
+  });
+}
+
+/* ----- Item tap handler ----- */
+function onItemTap(itemEl) {
+  if (state.busy) return;
+  if (state.tray.length >= 7) return;
+
+  ensureAudio();
+  playTap();
+  state.busy = true; // block other taps during flight
+
+  const emoji = itemEl.dataset.emoji;
+  const targetSlotIdx = state.tray.length;
+
+  const slot = document.querySelectorAll('#tray .tray-slot')[targetSlotIdx];
+  const itemRect = itemEl.getBoundingClientRect();
+  const slotRect = slot.getBoundingClientRect();
+  const dx = slotRect.left + slotRect.width / 2 - (itemRect.left + itemRect.width / 2);
+  const dy = slotRect.top + slotRect.height / 2 - (itemRect.top + itemRect.height / 2);
+
+  itemEl.classList.add('flying');
+  itemEl.style.transform = `translate(${dx}px, ${dy}px) scale(0.7)`;
+  itemEl.style.opacity = '0.3';
+
+  state.tray.push({ emoji, slotIdx: targetSlotIdx });
+
+  setTimeout(() => {
+    itemEl.remove();
+    slot.textContent = emoji;
+    slot.classList.add('has-item');
+
+    // COUNT INCREMENT happens IMMEDIATELY on landing (Match Factory style)
+    // Match-3 below is only for clearing tray slots, not for counting goals
+    if (state.collected.hasOwnProperty(emoji)) {
+      state.collected[emoji]++;
+      updateGoalChip(emoji);
+      // Soft chime per item collected
+      tone(700, 0.08, 0.12, 'triangle');
+      // Bigger chime when a target is fully completed
+      const target = LEVELS[state.currentLevelIdx].targets.find(t => t.emoji === emoji);
+      if (target && state.collected[emoji] === target.count) {
+        tone(880, 0.15, 0.15, 'triangle', 0.08);
+        tone(1175, 0.25, 0.15, 'triangle', 0.18);
+      }
+    }
+
+    processAfterLanding();
+  }, 320);
+}
+
+/* ----- After landing: handle match-3 clearing, then win/lose ----- */
+function processAfterLanding() {
+  const counts = {};
+  state.tray.forEach(t => { counts[t.emoji] = (counts[t.emoji] || 0) + 1; });
+  const matchEmoji = Object.keys(counts).find(e => counts[e] >= 3);
+
+  if (matchEmoji) {
+    // Match-3: clear 3 of this emoji from tray (only for slot management)
+    const matchSlots = [];
+    for (let i = 0; i < state.tray.length && matchSlots.length < 3; i++) {
+      if (state.tray[i].emoji === matchEmoji) matchSlots.push(i);
+    }
+    const slotEls = document.querySelectorAll('#tray .tray-slot');
+    matchSlots.forEach(idx => slotEls[idx].classList.add('matching'));
+    playMatch();
+
+    setTimeout(() => {
+      state.tray = state.tray.filter((_, i) => !matchSlots.includes(i));
+      redrawTray();
+      finalizeTurn();
+    }, 420);
+  } else {
+    finalizeTurn();
+  }
+}
+
+function finalizeTurn() {
+  if (isLevelWon()) {
+    onLevelWin();
+  } else if (state.tray.length >= 7) {
+    onLevelLose();
+  } else {
+    state.busy = false;
+  }
+}
+
+function redrawTray() {
+  const slots = document.querySelectorAll('#tray .tray-slot');
+  slots.forEach((s, i) => {
+    s.classList.remove('matching');
+    if (state.tray[i]) {
+      s.textContent = state.tray[i].emoji;
+      s.classList.add('has-item');
+      state.tray[i].slotIdx = i;
+    } else {
+      s.textContent = '';
+      s.classList.remove('has-item');
+    }
+  });
+}
+
+function isLevelWon() {
+  const level = LEVELS[state.currentLevelIdx];
+  return level.targets.every(t => (state.collected[t.emoji] || 0) >= t.count);
+}
+
+/* ----- Win / Lose handlers ----- */
+function onLevelWin() {
+  state.busy = true;
+  stopTimer();
+  playWinLevel();
+  state.starsEarned = Math.max(state.starsEarned, state.currentLevelIdx + 1);
+  renderGameStars();
+  // Show level complete popup
+  setTimeout(() => {
+    showCompletePopup();
+  }, 500);
+}
+
+function showCompletePopup() {
+  const level = LEVELS[state.currentLevelIdx];
+  const title = document.getElementById('complete-title');
+  const text = document.getElementById('complete-text');
+  // Extract "Màn N" prefix from level name
+  const levelLabel = level.name.split('—')[0].trim();
+  title.textContent = `${levelLabel} hoàn thành! 🎉`;
+  text.textContent = `Còn ${state.timeLeft}s — Tuyệt vời!`;
+  document.getElementById('complete-popup').classList.add('show');
+}
+
+function onCompleteContinue() {
+  document.getElementById('complete-popup').classList.remove('show');
+  const levelId = LEVELS[state.currentLevelIdx].id;
+  const revealNum = REVEAL_AFTER[levelId];
+  if (revealNum) {
+    showReveal(revealNum);
+  } else {
+    state.currentLevelIdx++;
+    startLevel();
+  }
+}
+
+function onLevelLose() {
+  stopTimer();
+  state.busy = true;
+  playLose();
+  setTimeout(() => {
+    showLosePopup('trayfull');
+  }, 400);
+}
+
+function showLosePopup(reason) {
+  const emoji = document.getElementById('lose-emoji');
+  const title = document.getElementById('lose-title');
+  const text = document.getElementById('lose-text');
+  const adsBtn = document.getElementById('lose-ads');
+
+  if (reason === 'timeout') {
+    emoji.textContent = '⏰';
+    title.textContent = 'Hết giờ rồi!';
+    text.textContent = 'Xem một quảng cáo ngắn để thêm 20 giây, hoặc chơi lại từ đầu.';
+    adsBtn.style.display = 'block';
+  } else {
+    emoji.textContent = '😔';
+    title.textContent = 'Bàn bếp đã đầy!';
+    text.textContent = 'Hãy cẩn thận với nguyên liệu nhiễu — chỉ chọn đúng nguyên liệu của món Phở.';
+    adsBtn.style.display = 'none';
+  }
+  document.getElementById('lose-popup').classList.add('show');
+}
+
+function onWatchAds() {
+  // Currently: no real ads — just grant the bonus time directly
+  document.getElementById('lose-popup').classList.remove('show');
+  state.timeLeft += ADS_BONUS_TIME;
+  updateTimerDisplay();
+  state.busy = false;
+  resumeTimer();
+  showToast(`+${ADS_BONUS_TIME}s đã được thêm`);
+}
+
+function hidePopups() {
+  document.getElementById('lose-popup').classList.remove('show');
+  document.getElementById('quit-popup').classList.remove('show');
+  document.getElementById('complete-popup').classList.remove('show');
+}
+
+/* ----- Game screen buttons ----- */
+document.getElementById('restart-btn').addEventListener('click', () => {
+  ensureAudio();
+  playTap();
+  stopTimer();
+  startLevel();
+});
+document.getElementById('back-to-menu').addEventListener('click', () => {
+  ensureAudio();
+  playTap();
+  stopTimer(); // pause while confirm popup is up
+  document.getElementById('quit-popup').classList.add('show');
+});
+document.getElementById('quit-confirm').addEventListener('click', () => {
+  playTap();
+  stopTimer();
+  hidePopups();
+  state.starsEarned = 0;
+  showScreen('screen-menu');
+});
+document.getElementById('quit-cancel').addEventListener('click', () => {
+  playTap();
+  hidePopups();
+  resumeTimer(); // resume after cancel
+});
+document.getElementById('lose-retry').addEventListener('click', () => {
+  playTap();
+  startLevel();
+});
+document.getElementById('lose-menu').addEventListener('click', () => {
+  playTap();
+  stopTimer();
+  hidePopups();
+  state.starsEarned = 0;
+  showScreen('screen-menu');
+});
+document.getElementById('lose-ads').addEventListener('click', () => {
+  playTap();
+  onWatchAds();
+});
+document.getElementById('complete-continue').addEventListener('click', () => {
+  playTap();
+  onCompleteContinue();
+});
+
+/* ============================================================
+   REVEAL ANIMATIONS
+   ============================================================ */
+function showReveal(num) {
+  if (num === 1) showReveal1();
+  else if (num === 2) showReveal2();
+  else if (num === 3) showReveal3();
+}
+
+/* ----- Reveal 1: prep plate (after level 3) ----- */
+function showReveal1() {
+  showScreen('screen-reveal1');
+  const stage = document.getElementById('reveal1-stage');
+  // Reset
+  const plate = document.getElementById('prep-plate');
+  plate.classList.remove('show');
+  // Remove any leftover particles
+  stage.querySelectorAll('.fly-particle').forEach(p => p.remove());
+
+  // Stars: light first 3 progressively
+  const stars = document.querySelectorAll('#reveal1-stars .star');
+  stars.forEach(s => s.classList.remove('lit'));
+
+  // Ingredients from levels 1-3
+  const ings = ['🦴', '🥩', '🍜', '🧅', '🫚', '⭐', '🪵', '🟤'];
+  const positions = [
+    { x: -120, y: -100 }, { x: 120, y: -100 }, { x: -140, y: 0 },
+    { x: 140, y: 0 }, { x: -100, y: 100 }, { x: 100, y: 100 },
+    { x: 0, y: -130 }, { x: 0, y: 130 }
+  ];
+
+  // Spawn particles flying in from edges then converging
+  ings.forEach((emoji, i) => {
+    const p = document.createElement('div');
+    p.className = 'fly-particle';
+    p.textContent = emoji;
+    p.style.left = '50%';
+    p.style.top = '50%';
+    p.style.transform = `translate(calc(-50% + ${positions[i].x * 2}px), calc(-50% + ${positions[i].y * 2}px)) scale(0)`;
+    p.style.opacity = '0';
+    p.style.transition = `all 700ms cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 60}ms`;
+    stage.appendChild(p);
+    requestAnimationFrame(() => {
+      p.style.transform = `translate(calc(-50% + ${positions[i].x}px), calc(-50% + ${positions[i].y}px)) scale(1)`;
+      p.style.opacity = '1';
+    });
+  });
+
+  // After particles spread, converge into plate
+  setTimeout(() => {
+    stage.querySelectorAll('.fly-particle').forEach((p, i) => {
+      p.style.transition = `all 600ms cubic-bezier(0.4, 0, 0.6, 1) ${i * 40}ms`;
+      p.style.transform = `translate(-50%, -50%) scale(0.3)`;
+      p.style.opacity = '0';
+    });
+  }, 1200);
+
+  // Show plate
+  setTimeout(() => {
+    plate.classList.add('show');
+    playReveal();
+  }, 1700);
+
+  // Light stars
+  setTimeout(() => {
+    stars[0].classList.add('lit');
+    setTimeout(() => stars[1].classList.add('lit'), 200);
+    setTimeout(() => stars[2].classList.add('lit'), 400);
+  }, 2400);
+
+  // Show continue button
+  setTimeout(() => {
+    document.getElementById('reveal1-continue').classList.add('show');
+    state.busy = false;
+  }, 3200);
+}
+
+document.getElementById('reveal1-continue').addEventListener('click', () => {
+  playTap();
+  document.getElementById('reveal1-continue').classList.remove('show');
+  state.currentLevelIdx = 3; // jump to level 4
+  startLevel();
+});
+
+/* ----- Reveal 2: boiling pot (after level 6) ----- */
+function showReveal2() {
+  showScreen('screen-reveal2');
+  const stage = document.getElementById('reveal2-stage');
+  const pot = document.getElementById('boil-pot');
+  pot.classList.remove('show');
+  stage.querySelectorAll('.fly-particle, .steam').forEach(p => p.remove());
+
+  const stars = document.querySelectorAll('#reveal2-stars .star');
+  stars.forEach(s => s.classList.remove('lit'));
+
+  // Ingredients from levels 4-5
+  const ings = ['🍶', '🧂', '🌱', '🌿', '🍋', '🌶️'];
+  // Tools from level 6
+  const tools = ['🪵', '🥄'];
+
+  // Particles fly to center (into pot position)
+  ings.forEach((emoji, i) => {
+    const p = document.createElement('div');
+    p.className = 'fly-particle';
+    p.textContent = emoji;
+    const startX = (i % 2 === 0 ? -1 : 1) * (140 + i * 10);
+    const startY = -120 + i * 35;
+    p.style.left = '50%';
+    p.style.top = '50%';
+    p.style.transform = `translate(calc(-50% + ${startX}px), calc(-50% + ${startY}px)) scale(0)`;
+    p.style.opacity = '0';
+    p.style.transition = `all 800ms cubic-bezier(0.4, 0, 0.6, 1) ${i * 100}ms`;
+    stage.appendChild(p);
+    requestAnimationFrame(() => {
+      p.style.transform = `translate(-50%, calc(-50% + 20px)) scale(0.4)`;
+      p.style.opacity = '0';
+    });
+  });
+
+  // Show pot
+  setTimeout(() => {
+    pot.classList.add('show');
+    playReveal();
+  }, 600);
+
+  // Tools arrange around pot
+  setTimeout(() => {
+    tools.forEach((emoji, i) => {
+      const p = document.createElement('div');
+      p.className = 'fly-particle';
+      p.textContent = emoji;
+      p.style.fontSize = '40px';
+      const x = i === 0 ? -100 : 100;
+      const y = 30;
+      p.style.left = '50%';
+      p.style.top = '50%';
+      p.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(0) rotate(${i === 0 ? -30 : 30}deg)`;
+      p.style.opacity = '0';
+      p.style.transition = `all 500ms cubic-bezier(0.34, 1.56, 0.64, 1)`;
+      stage.appendChild(p);
+      requestAnimationFrame(() => {
+        p.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(1) rotate(${i === 0 ? -15 : 15}deg)`;
+        p.style.opacity = '1';
+      });
+    });
+  }, 1400);
+
+  // Steam
+  setTimeout(() => {
+    for (let i = 0; i < 4; i++) {
+      const s = document.createElement('div');
+      s.className = 'steam';
+      s.textContent = '💨';
+      s.style.left = `calc(50% + ${(Math.random() - 0.5) * 80}px)`;
+      s.style.top = '40%';
+      s.style.animationDelay = (i * 0.6) + 's';
+      stage.appendChild(s);
+    }
+  }, 1800);
+
+  // Light stars 4, 5, 6
+  setTimeout(() => {
+    [0,1,2,3].forEach(i => stars[i].classList.add('lit'));
+    setTimeout(() => stars[4].classList.add('lit'), 200);
+    setTimeout(() => stars[5].classList.add('lit'), 400);
+  }, 2200);
+
+  setTimeout(() => {
+    document.getElementById('reveal2-continue').classList.add('show');
+    state.busy = false;
+  }, 3200);
+}
+
+document.getElementById('reveal2-continue').addEventListener('click', () => {
+  playTap();
+  document.getElementById('reveal2-continue').classList.remove('show');
+  state.currentLevelIdx = 6; // jump to level 7
+  startLevel();
+});
+
+/* ----- Reveal 3: FINAL BOWL (after level 7) ----- */
+function showReveal3() {
+  showScreen('screen-reveal3');
+  const stage = document.getElementById('final-stage');
+  const bowl = document.getElementById('final-bowl');
+  bowl.classList.remove('show');
+  stage.querySelectorAll('.bowl-topping, .side-utensil, .steam').forEach(e => e.remove());
+
+  const stars = document.querySelectorAll('#reveal3-stars .star');
+  stars.forEach(s => s.classList.remove('lit'));
+
+  // Bowl appears
+  setTimeout(() => {
+    bowl.classList.add('show');
+    playReveal();
+  }, 400);
+
+  // Steam continuous
+  setTimeout(() => {
+    for (let i = 0; i < 5; i++) {
+      const s = document.createElement('div');
+      s.className = 'steam';
+      s.textContent = '💨';
+      s.style.left = `calc(50% + ${(Math.random() - 0.5) * 100}px)`;
+      s.style.top = '20%';
+      s.style.animationDelay = (i * 0.5) + 's';
+      stage.appendChild(s);
+    }
+  }, 800);
+
+  // Toppings appear sequentially
+  const toppings = [
+    { emoji: '🍜', x: 0,   y: -10, delay: 1200 },
+    { emoji: '🥩', x: -30, y: 0,   delay: 1500 },
+    { emoji: '🌱', x: 30,  y: -10, delay: 1800 },
+    { emoji: '🌿', x: 0,   y: 20,  delay: 2100 },
+    { emoji: '🌶️', x: 35,  y: 25,  delay: 2400 }
+  ];
+  toppings.forEach(t => {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'bowl-topping';
+      el.textContent = t.emoji;
+      el.style.left = '50%';
+      el.style.top = '50%';
+      el.style.marginLeft = (t.x - 16) + 'px';
+      el.style.marginTop = (t.y - 16) + 'px';
+      stage.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('show'));
+      tone(700 + Math.random() * 200, 0.1, 0.1, 'triangle');
+    }, t.delay);
+  });
+
+  // Utensils
+  setTimeout(() => {
+    const chops = document.createElement('div');
+    chops.className = 'side-utensil';
+    chops.textContent = '🥢';
+    chops.style.left = '0';
+    chops.style.top = '50%';
+    chops.style.transform = 'translateY(-50%) rotate(-15deg)';
+    stage.appendChild(chops);
+    requestAnimationFrame(() => chops.classList.add('show'));
+
+    const spoon = document.createElement('div');
+    spoon.className = 'side-utensil';
+    spoon.textContent = '🥄';
+    spoon.style.right = '0';
+    spoon.style.top = '50%';
+    spoon.style.transform = 'translateY(-50%) rotate(15deg)';
+    stage.appendChild(spoon);
+    requestAnimationFrame(() => spoon.classList.add('show'));
+  }, 2700);
+
+  // Light all 7 stars
+  setTimeout(() => {
+    stars.forEach((s, i) => {
+      setTimeout(() => s.classList.add('lit'), i * 120);
+    });
+    playFanfare();
+  }, 3000);
+
+  // Save progress
+  setTimeout(() => {
+    state.phoCompleted = true;
+    saveProgress();
+    updateMenuUI();
+    document.getElementById('reveal3-continue').classList.add('show');
+    state.busy = false;
+  }, 4200);
+}
+
+document.getElementById('reveal3-continue').addEventListener('click', () => {
+  playTap();
+  document.getElementById('reveal3-continue').classList.remove('show');
+  state.starsEarned = 0;
+  showScreen('screen-menu');
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+loadProgress();
+updateMenuUI();
+
+// Prevent iOS bounce
+document.addEventListener('touchmove', function(e) {
+  if (e.target.closest('#screen-menu')) return; // allow scroll in menu
+  e.preventDefault();
+}, { passive: false });
+
+</script>
+</body>
+</html>
