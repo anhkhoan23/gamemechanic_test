@@ -111,143 +111,273 @@ html, body {
   background:
     radial-gradient(circle at top, #fff5e0 0%, transparent 60%),
     linear-gradient(180deg, #f9efd9 0%, #f0e3c4 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Scrollable area below the fixed top bar + country strip */
+.menu-scroll-area {
+  flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  min-height: 0; /* allow flex item to shrink */
 }
 
-.menu-header {
-  padding: 60px 24px 16px;
-  text-align: center;
+/* Top bar with profile, lives, coins, gift */
+.top-bar-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 60px 12px 8px;
+  flex-shrink: 0;
 }
-.menu-title {
-  font-size: 32px;
-  font-weight: 800;
-  color: #8b2e2e;
-  letter-spacing: -0.5px;
-  font-family: Georgia, 'Times New Roman', serif;
-}
-.menu-subtitle {
+.top-pill {
+  background: linear-gradient(180deg, #fdf5e0 0%, #f3deaa 100%);
+  border: 1.5px solid #c89a4c;
+  border-radius: 14px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 14px;
-  color: #8a6d4a;
-  margin-top: 6px;
-  letter-spacing: 0.5px;
-}
-
-.menu-divider {
-  width: 40px;
-  height: 3px;
-  background: #d4a039;
-  border-radius: 2px;
-  margin: 16px auto;
-}
-
-.dish-list {
-  padding: 8px 16px 100px;
-}
-
-/* Featured dish card (Phở) */
-.dish-card-featured {
-  background: linear-gradient(135deg, #fffaf0 0%, #fceac0 100%);
-  border-radius: 24px;
-  padding: 24px 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 24px rgba(139, 46, 46, 0.12), inset 0 1px 0 rgba(255,255,255,0.8);
-  border: 2px solid #e8c976;
-  cursor: pointer;
-  position: relative;
-  text-align: center;
-  transition: transform 200ms ease;
-}
-.dish-card-featured:active {
-  transform: scale(0.97);
-}
-.dish-card-featured .dish-emoji {
-  font-size: 80px;
-  line-height: 1;
-  display: block;
-  margin-bottom: 8px;
-  transition: filter 400ms ease;
-}
-.dish-card-featured.incomplete .dish-emoji {
-  filter: grayscale(1) brightness(0.85);
-}
-.dish-card-featured .dish-name {
-  font-size: 22px;
   font-weight: 700;
   color: #5a2020;
-  letter-spacing: -0.3px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  min-height: 36px;
 }
-.dish-card-featured .dish-flag {
+.top-pill:active { transform: scale(0.96); }
+.top-pill .icon {
   font-size: 18px;
-  margin-left: 6px;
+  line-height: 1;
 }
-.dish-card-featured .star-row {
-  display: flex;
+.top-pill.resource {
+  flex: 1;
   justify-content: center;
-  gap: 4px;
-  margin-top: 10px;
-  font-size: 18px;
 }
-.dish-card-featured .star {
-  filter: grayscale(1) brightness(0.7);
-  opacity: 0.5;
-  transition: all 400ms ease;
-}
-.dish-card-featured .star.lit {
-  filter: none;
-  opacity: 1;
-  text-shadow: 0 0 8px rgba(255, 200, 50, 0.6);
-}
-.dish-card-featured .completed-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  font-size: 22px;
-  opacity: 0;
-  transition: opacity 400ms ease;
-}
-.dish-card-featured.complete .completed-badge {
-  opacity: 1;
+.top-pill.icon-only {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  justify-content: center;
 }
 
-/* Grid for locked dishes */
-.dish-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.dish-card-locked {
-  background: rgba(255,255,255,0.4);
-  border: 1px dashed #b89a6a;
-  border-radius: 16px;
-  padding: 16px 8px;
-  text-align: center;
+/* Country selector strip */
+.country-strip-wrap {
+  padding: 4px 0 8px;
+  background: linear-gradient(180deg, transparent 0%, rgba(212, 160, 57, 0.15) 50%, transparent 100%);
+  flex-shrink: 0;
   position: relative;
-  opacity: 0.7;
+  z-index: 2;
+  box-shadow: 0 4px 8px -2px rgba(74, 40, 16, 0.12);
 }
-.dish-card-locked .dish-emoji {
-  font-size: 40px;
-  filter: grayscale(1) brightness(0.7);
-  display: block;
-  margin-bottom: 4px;
+.country-strip {
+  display: flex;
+  gap: 8px;
+  padding: 6px 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
-.dish-card-locked .dish-name {
-  font-size: 13px;
-  color: #6e5a3a;
-  font-weight: 600;
+.country-strip::-webkit-scrollbar { display: none; }
+.country-chip {
+  flex-shrink: 0;
+  width: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 4px 4px;
+  background: rgba(255,255,255,0.5);
+  border-radius: 14px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 150ms, border-color 200ms, background 200ms;
+  position: relative;
 }
-.dish-card-locked .dish-soon {
-  font-size: 10px;
-  color: #a08762;
-  margin-top: 2px;
+.country-chip:active { transform: scale(0.94); }
+.country-chip.active {
+  background: linear-gradient(180deg, #fff5d6 0%, #ffe09c 100%);
+  border-color: #d4a039;
+  box-shadow: 0 0 0 2px rgba(212, 160, 57, 0.25), 0 4px 10px rgba(0,0,0,0.1);
 }
-.dish-card-locked .lock-icon {
+.country-chip.locked .country-emoji {
+  filter: grayscale(0.7) brightness(0.85);
+}
+.country-chip.locked::after {
+  content: '🔒';
   position: absolute;
-  top: 6px;
-  right: 8px;
+  top: 2px;
+  right: 6px;
   font-size: 14px;
 }
-.dish-card-locked.shake {
+.country-chip .country-num {
+  font-size: 11px;
+  font-weight: 800;
+  color: #8b2e2e;
+  margin-bottom: 2px;
+}
+.country-chip .country-emoji {
+  font-size: 32px;
+  line-height: 1;
+}
+.country-chip .country-flag {
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+/* Country header card */
+.country-header {
+  margin: 8px 12px 12px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 60%),
+    linear-gradient(180deg, #e8c976 0%, #c89a4c 100%);
+  border: 2px solid #8b6020;
+  border-radius: 20px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.4);
+  color: #4a2810;
+  position: relative;
+}
+.country-header .ch-title {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: Georgia, serif;
+  letter-spacing: -0.3px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.country-header .ch-flag { font-size: 22px; }
+.country-header .ch-progress-bar {
+  background: rgba(74, 40, 16, 0.25);
+  border-radius: 10px;
+  height: 14px;
+  overflow: hidden;
+  margin-bottom: 4px;
+  border: 1px solid rgba(74, 40, 16, 0.4);
+}
+.country-header .ch-progress-fill {
+  background: linear-gradient(180deg, #ffd966 0%, #d4a039 100%);
+  height: 100%;
+  width: 0%;
+  transition: width 400ms ease;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.country-header .ch-progress-text {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+/* Dish grid: 2x2 + 1 wide */
+.dish-grid-5 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 12px;
+  margin-bottom: 16px;
+}
+.dish-slot {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  background: linear-gradient(180deg, #fff5d6 0%, #f3deaa 100%);
+  border: 2px solid #c89a4c;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.5);
+  transition: transform 150ms;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  padding: 8px;
+}
+.dish-slot:active { transform: scale(0.96); }
+.dish-slot.size-wide {
+  grid-column: span 2;
+  aspect-ratio: 2.4 / 1;
+}
+.dish-slot .dish-banner {
+  position: absolute;
+  top: -2px;
+  left: 8px;
+  background: #8b2e2e;
+  color: #fff5d6;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 8px 6px;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  z-index: 2;
+  letter-spacing: 0.5px;
+}
+.dish-slot .dish-banner.banner-done {
+  background: linear-gradient(180deg, #4ab366 0%, #2d8a4f 100%);
+  color: white;
+  font-size: 11px;
+  padding: 5px 12px 7px;
+  letter-spacing: 1.5px;
+}
+.dish-slot .dish-emoji {
+  font-size: 64px;
+  line-height: 1;
+  transition: filter 300ms;
+}
+.dish-slot.size-wide .dish-emoji { font-size: 80px; }
+.dish-slot .dish-name {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  color: #5a2020;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+}
+.dish-slot.size-wide .dish-name { font-size: 14px; bottom: 10px; }
+.dish-slot .dish-stars {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  font-size: 10px;
+}
+.dish-slot.size-wide .dish-stars { bottom: 32px; font-size: 12px; }
+.dish-slot .dish-stars .star {
+  filter: grayscale(1) brightness(0.6);
+  opacity: 0.4;
+  transition: all 300ms;
+}
+.dish-slot .dish-stars .star.lit {
+  filter: none;
+  opacity: 1;
+  text-shadow: 0 0 6px rgba(255, 200, 50, 0.5);
+}
+.dish-slot.complete .dish-stars .star {
+  filter: none;
+  opacity: 1;
+  text-shadow: 0 0 6px rgba(255, 200, 50, 0.5);
+}
+.dish-slot.locked .dish-emoji {
+  filter: grayscale(1) brightness(0.7);
+}
+.dish-slot.locked .lock-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.08);
+  font-size: 38px;
+  z-index: 2;
+}
+.dish-slot.shake {
   animation: shake 400ms ease;
 }
 @keyframes shake {
@@ -258,7 +388,8 @@ html, body {
 
 .menu-footer {
   text-align: center;
-  padding: 16px 0 50px;
+  padding: 12px 0 50px;
+  flex-shrink: 0;
 }
 .reset-btn {
   background: transparent;
@@ -276,7 +407,7 @@ html, body {
   bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0,0,0,0.75);
+  background: rgba(0,0,0,0.78);
   color: white;
   padding: 10px 18px;
   border-radius: 20px;
@@ -285,6 +416,7 @@ html, body {
   pointer-events: none;
   transition: opacity 300ms;
   z-index: 2000;
+  white-space: nowrap;
 }
 .toast.show { opacity: 1; }
 
@@ -780,58 +912,37 @@ html, body {
 
     <!-- ========== MENU SCREEN ========== -->
     <div id="screen-menu" class="screen active">
-      <div class="menu-header">
-        <div class="menu-title">World Cuisine</div>
-        <div class="menu-divider"></div>
-        <div class="menu-subtitle">Chọn món để nấu</div>
+      <!-- Top bar: avatar, leaderboard, hearts, coins, gift -->
+      <div class="top-bar-menu">
+        <button class="top-pill icon-only" data-toast="Hồ sơ người chơi">
+          <span class="icon">👤</span>
+        </button>
+        <button class="top-pill icon-only" data-toast="Bảng xếp hạng">
+          <span class="icon">👑</span>
+        </button>
+        <button class="top-pill resource" data-toast="Tim sống">
+          <span class="icon">❤️</span><span>Full</span>
+        </button>
+        <button class="top-pill resource" data-toast="Tiền vàng">
+          <span class="icon">🪙</span><span>0</span>
+        </button>
+        <button class="top-pill icon-only" data-toast="Quà hàng ngày">
+          <span class="icon">🎁</span>
+        </button>
       </div>
-      <div class="dish-list" id="dish-list">
-        <!-- Phở Bò featured card -->
-        <div class="dish-card-featured incomplete" id="card-pho">
-          <span class="completed-badge">✅</span>
-          <span class="dish-emoji">🍜</span>
-          <div class="dish-name">Phở Bò <span class="dish-flag">🇻🇳</span></div>
-          <div class="star-row" id="menu-star-row">
-            <span class="star">⭐</span><span class="star">⭐</span>
-            <span class="star">⭐</span><span class="star">⭐</span>
-            <span class="star">⭐</span><span class="star">⭐</span>
-            <span class="star">⭐</span>
-          </div>
-        </div>
 
-        <!-- Locked dishes -->
-        <div class="dish-grid">
-          <div class="dish-card-locked" data-name="Pizza Margherita">
-            <span class="lock-icon">🔒</span>
-            <span class="dish-emoji">🍕</span>
-            <div class="dish-name">Pizza 🇮🇹</div>
-            <div class="dish-soon">Coming soon</div>
-          </div>
-          <div class="dish-card-locked" data-name="Sushi">
-            <span class="lock-icon">🔒</span>
-            <span class="dish-emoji">🍣</span>
-            <div class="dish-name">Sushi 🇯🇵</div>
-            <div class="dish-soon">Coming soon</div>
-          </div>
-          <div class="dish-card-locked" data-name="Croissant">
-            <span class="lock-icon">🔒</span>
-            <span class="dish-emoji">🥐</span>
-            <div class="dish-name">Croissant 🇫🇷</div>
-            <div class="dish-soon">Coming soon</div>
-          </div>
-          <div class="dish-card-locked" data-name="Taco">
-            <span class="lock-icon">🔒</span>
-            <span class="dish-emoji">🌮</span>
-            <div class="dish-name">Taco 🇲🇽</div>
-            <div class="dish-soon">Coming soon</div>
-          </div>
-          <div class="dish-card-locked" data-name="Curry">
-            <span class="lock-icon">🔒</span>
-            <span class="dish-emoji">🍛</span>
-            <div class="dish-name">Curry 🇮🇳</div>
-            <div class="dish-soon">Coming soon</div>
-          </div>
-        </div>
+      <!-- Country selector horizontal strip -->
+      <div class="country-strip-wrap">
+        <div class="country-strip" id="country-strip"></div>
+      </div>
+
+      <!-- Scrollable area: country header + dish grid + footer -->
+      <div class="menu-scroll-area">
+        <!-- Selected country header card -->
+        <div class="country-header" id="country-header"></div>
+
+        <!-- Dish grid for selected country -->
+        <div class="dish-grid-5" id="dish-grid"></div>
 
         <div class="menu-footer">
           <button class="reset-btn" id="reset-btn">↺ Reset progress</button>
@@ -1052,16 +1163,104 @@ const LEVEL_TIME = 60;    // seconds per level
 const ADS_BONUS_TIME = 20; // seconds added when "watching ads"
 
 /* ============================================================
+   DISH ROSTER — 6 countries × 5 dishes = 30 dishes
+   Only "pho" is playable in this prototype; others are placeholders
+   ============================================================ */
+const COUNTRIES = [
+  {
+    id: 'vn',
+    flag: '🇻🇳',
+    name: 'Việt Nam',
+    signature: '🍜',
+    dishes: [
+      { id: 'pho',         name: 'Phở Bò',     emoji: '🍜', playable: true,  starCount: 7 },
+      { id: 'goi-cuon',    name: 'Gỏi cuốn',   emoji: '🥬', playable: false, starCount: 4 },
+      { id: 'banh-mi',     name: 'Bánh mì',    emoji: '🥖', playable: false, starCount: 4 },
+      { id: 'bun-cha',     name: 'Bún chả',    emoji: '🍢', playable: false, starCount: 5 },
+      { id: 'bun-bo-hue',  name: 'Bún bò Huế', emoji: '🌶️', playable: false, starCount: 6 }
+    ]
+  },
+  {
+    id: 'it',
+    flag: '🇮🇹',
+    name: 'Italia',
+    signature: '🍕',
+    dishes: [
+      { id: 'pizza',       name: 'Pizza Margherita', emoji: '🍕', playable: false, starCount: 5 },
+      { id: 'bruschetta',  name: 'Bruschetta',       emoji: '🍅', playable: false, starCount: 3 },
+      { id: 'carbonara',   name: 'Carbonara',        emoji: '🍝', playable: false, starCount: 5 },
+      { id: 'lasagna',     name: 'Lasagna',          emoji: '🧀', playable: false, starCount: 6 },
+      { id: 'risotto',     name: 'Risotto ai funghi', emoji: '🍄', playable: false, starCount: 6 }
+    ]
+  },
+  {
+    id: 'jp',
+    flag: '🇯🇵',
+    name: 'Nhật Bản',
+    signature: '🍣',
+    dishes: [
+      { id: 'sushi',       name: 'Sushi',     emoji: '🍣', playable: false, starCount: 5 },
+      { id: 'tempura',     name: 'Tempura',   emoji: '🍤', playable: false, starCount: 4 },
+      { id: 'onigiri',     name: 'Onigiri',   emoji: '🍙', playable: false, starCount: 3 },
+      { id: 'takoyaki',    name: 'Takoyaki',  emoji: '🐙', playable: false, starCount: 5 },
+      { id: 'ramen',       name: 'Ramen Tonkotsu', emoji: '🍜', playable: false, starCount: 7 }
+    ]
+  },
+  {
+    id: 'fr',
+    flag: '🇫🇷',
+    name: 'Pháp',
+    signature: '🥐',
+    dishes: [
+      { id: 'croissant',   name: 'Croissant',     emoji: '🥐', playable: false, starCount: 4 },
+      { id: 'crepe',       name: 'Crêpe',         emoji: '🥞', playable: false, starCount: 3 },
+      { id: 'croque',      name: 'Croque-monsieur', emoji: '🥪', playable: false, starCount: 4 },
+      { id: 'ratatouille', name: 'Ratatouille',   emoji: '🍆', playable: false, starCount: 6 },
+      { id: 'bouillabaisse', name: 'Bouillabaisse', emoji: '🦞', playable: false, starCount: 7 }
+    ]
+  },
+  {
+    id: 'mx',
+    flag: '🇲🇽',
+    name: 'Mexico',
+    signature: '🌮',
+    dishes: [
+      { id: 'taco',        name: 'Taco al pastor', emoji: '🌮', playable: false, starCount: 5 },
+      { id: 'guacamole',   name: 'Guacamole',      emoji: '🥑', playable: false, starCount: 3 },
+      { id: 'quesadilla',  name: 'Quesadilla',     emoji: '🫓', playable: false, starCount: 4 },
+      { id: 'burrito',     name: 'Burrito',        emoji: '🌯', playable: false, starCount: 5 },
+      { id: 'enchilada',   name: 'Enchiladas',     emoji: '🫔', playable: false, starCount: 6 }
+    ]
+  },
+  {
+    id: 'in',
+    flag: '🇮🇳',
+    name: 'Ấn Độ',
+    signature: '🍛',
+    dishes: [
+      { id: 'naan',        name: 'Naan',           emoji: '🫓', playable: false, starCount: 3 },
+      { id: 'samosa',      name: 'Samosa',         emoji: '🥟', playable: false, starCount: 4 },
+      { id: 'tikka',       name: 'Tikka Masala',   emoji: '🍛', playable: false, starCount: 5 },
+      { id: 'biryani',     name: 'Biryani',        emoji: '🍚', playable: false, starCount: 6 },
+      { id: 'curry-thali', name: 'Curry Thali',    emoji: '🍱', playable: false, starCount: 7 }
+    ]
+  }
+];
+
+/* ============================================================
    STATE
    ============================================================ */
 let state = {
   currentScreen: 'menu',
   currentLevelIdx: 0,
-  tray: [],         // array of {emoji, slotIdx}
-  collected: {},    // {emoji: count}
+  currentDishId: null,        // which dish is being played
+  tray: [],
+  collected: {},
   starsEarned: 0,
-  phoCompleted: false,
-  busy: false,      // block input during animations
+  completedDishes: {},        // { 'pho': true, ... }
+  dishProgress: {},           // { 'pho': 3 } = levels completed (next to play = this value)
+  selectedCountryIdx: 0,
+  busy: false,
   timeLeft: LEVEL_TIME,
   timerInterval: null
 };
@@ -1071,23 +1270,28 @@ let state = {
    ============================================================ */
 function saveProgress() {
   try {
-    localStorage.setItem('worldcuisine_pho', JSON.stringify({
-      completed: state.phoCompleted
+    localStorage.setItem('worldcuisine_progress', JSON.stringify({
+      completedDishes: state.completedDishes,
+      dishProgress: state.dishProgress
     }));
   } catch (e) {}
 }
 function loadProgress() {
   try {
-    const data = JSON.parse(localStorage.getItem('worldcuisine_pho') || '{}');
-    state.phoCompleted = !!data.completed;
+    const data = JSON.parse(localStorage.getItem('worldcuisine_progress') || '{}');
+    state.completedDishes = data.completedDishes || {};
+    state.dishProgress = data.dishProgress || {};
   } catch (e) {
-    state.phoCompleted = false;
+    state.completedDishes = {};
+    state.dishProgress = {};
   }
 }
 function resetProgress() {
+  localStorage.removeItem('worldcuisine_progress');
   localStorage.removeItem('worldcuisine_pho');
-  state.phoCompleted = false;
-  updateMenuUI();
+  state.completedDishes = {};
+  state.dishProgress = {};
+  renderMenu();
   showToast('Tiến độ đã được reset');
 }
 
@@ -1225,36 +1429,124 @@ function showToast(msg) {
 /* ============================================================
    MENU UI
    ============================================================ */
-function updateMenuUI() {
-  const card = document.getElementById('card-pho');
-  const stars = document.querySelectorAll('#menu-star-row .star');
-  if (state.phoCompleted) {
-    card.classList.remove('incomplete');
-    card.classList.add('complete');
-    stars.forEach(s => s.classList.add('lit'));
-  } else {
-    card.classList.add('incomplete');
-    card.classList.remove('complete');
-    stars.forEach(s => s.classList.remove('lit'));
-  }
+function renderMenu() {
+  renderCountryStrip();
+  renderCountryHeader();
+  renderDishGrid();
 }
 
-document.getElementById('card-pho').addEventListener('click', () => {
-  ensureAudio();
-  playTap();
-  state.currentLevelIdx = 0;
-  state.starsEarned = 0;
-  startLevel();
-});
+function renderCountryStrip() {
+  const strip = document.getElementById('country-strip');
+  strip.innerHTML = '';
+  COUNTRIES.forEach((country, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'country-chip';
+    if (idx === state.selectedCountryIdx) chip.classList.add('active');
+    chip.innerHTML = `
+      <div class="country-num">${idx + 1}</div>
+      <div class="country-emoji">${country.signature}</div>
+      <div class="country-flag">${country.flag}</div>
+    `;
+    chip.addEventListener('click', () => {
+      ensureAudio();
+      playTap();
+      state.selectedCountryIdx = idx;
+      renderMenu();
+    });
+    strip.appendChild(chip);
+  });
+}
 
-document.querySelectorAll('.dish-card-locked').forEach(card => {
-  card.addEventListener('click', () => {
+function renderCountryHeader() {
+  const country = COUNTRIES[state.selectedCountryIdx];
+  const header = document.getElementById('country-header');
+  const totalDishes = country.dishes.length;
+  const completedCount = country.dishes.filter(d => state.completedDishes[d.id]).length;
+  const percent = (completedCount / totalDishes) * 100;
+  header.innerHTML = `
+    <div class="ch-title">
+      <span class="ch-flag">${country.flag}</span>
+      <span>Menu — ${country.name}</span>
+    </div>
+    <div class="ch-progress-bar">
+      <div class="ch-progress-fill" style="width: ${percent}%"></div>
+    </div>
+    <div class="ch-progress-text">Hoàn thành ${completedCount}/${totalDishes} món</div>
+  `;
+}
+
+function renderDishGrid() {
+  const country = COUNTRIES[state.selectedCountryIdx];
+  const grid = document.getElementById('dish-grid');
+  grid.innerHTML = '';
+  country.dishes.forEach((dish, idx) => {
+    const slot = document.createElement('div');
+    slot.className = 'dish-slot';
+    if (idx === 4) slot.classList.add('size-wide');
+
+    const isFirstSlot = (idx === 0);
+    const showLockOverlay = !isFirstSlot && !dish.playable;
+    const isCompleted = !!state.completedDishes[dish.id];
+    const progress = state.dishProgress[dish.id] || 0; // levels completed
+
+    if (showLockOverlay) slot.classList.add('locked');
+    if (isCompleted) slot.classList.add('complete');
+
+    // Build stars HTML: starCount stars, first `progress` are lit
+    const starCount = dish.starCount || 3;
+    const litCount = isCompleted ? starCount : Math.min(progress, starCount);
+    let starsHtml = '';
+    for (let i = 0; i < starCount; i++) {
+      starsHtml += `<span class="star${i < litCount ? ' lit' : ''}">⭐</span>`;
+    }
+
+    // Banner: "DONE" green ribbon if completed, else slot number
+    const bannerContent = isCompleted
+      ? '<div class="dish-banner banner-done">DONE</div>'
+      : `<div class="dish-banner">${idx + 1}</div>`;
+
+    slot.innerHTML = `
+      ${bannerContent}
+      <div class="dish-emoji">${dish.emoji}</div>
+      <div class="dish-stars">${starsHtml}</div>
+      <div class="dish-name">${dish.name}</div>
+      ${showLockOverlay ? '<div class="lock-overlay">🔒</div>' : ''}
+    `;
+
+    slot.addEventListener('click', () => {
+      ensureAudio();
+      playTap();
+      if (!dish.playable) {
+        slot.classList.remove('shake');
+        void slot.offsetWidth;
+        slot.classList.add('shake');
+        showToast(`🔒 ${dish.name} sẽ mở khóa sau`);
+        return;
+      }
+      // Playable: resume from saved progress, or replay if already completed
+      state.currentDishId = dish.id;
+      if (isCompleted) {
+        // Replay from level 1
+        state.currentLevelIdx = 0;
+        state.starsEarned = 0;
+      } else {
+        // Resume from where they left off
+        state.currentLevelIdx = progress;
+        state.starsEarned = progress;
+      }
+      startLevel();
+    });
+    grid.appendChild(slot);
+  });
+}
+
+// Wire up decorative top-bar buttons (all show toast)
+document.querySelectorAll('#screen-menu .top-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
     ensureAudio();
     playTap();
-    card.classList.remove('shake');
-    void card.offsetWidth; // reflow to restart anim
-    card.classList.add('shake');
-    showToast('🔒 ' + card.dataset.name + ' sẽ mở khóa sau');
+    const msg = btn.getAttribute('data-toast') || 'Coming soon';
+    showToast(`✨ ${msg} — Coming soon`);
   });
 });
 
@@ -1492,6 +1784,15 @@ function onLevelWin() {
   playWinLevel();
   state.starsEarned = Math.max(state.starsEarned, state.currentLevelIdx + 1);
   renderGameStars();
+  // Save dish progress so user can resume if they quit
+  if (state.currentDishId) {
+    const completedLevels = state.currentLevelIdx + 1;
+    state.dishProgress[state.currentDishId] = Math.max(
+      state.dishProgress[state.currentDishId] || 0,
+      completedLevels
+    );
+    saveProgress();
+  }
   // Show level complete popup
   setTimeout(() => {
     showCompletePopup();
@@ -1584,6 +1885,7 @@ document.getElementById('quit-confirm').addEventListener('click', () => {
   stopTimer();
   hidePopups();
   state.starsEarned = 0;
+  renderMenu(); // re-render so saved dishProgress is reflected
   showScreen('screen-menu');
 });
 document.getElementById('quit-cancel').addEventListener('click', () => {
@@ -1600,6 +1902,7 @@ document.getElementById('lose-menu').addEventListener('click', () => {
   stopTimer();
   hidePopups();
   state.starsEarned = 0;
+  renderMenu();
   showScreen('screen-menu');
 });
 document.getElementById('lose-ads').addEventListener('click', () => {
@@ -1875,9 +2178,16 @@ function showReveal3() {
 
   // Save progress
   setTimeout(() => {
-    state.phoCompleted = true;
+    const dishId = state.currentDishId || 'pho';
+    state.completedDishes[dishId] = true;
+    // Find the dish to get max stars
+    let maxStars = 7;
+    COUNTRIES.forEach(c => c.dishes.forEach(d => {
+      if (d.id === dishId) maxStars = d.starCount;
+    }));
+    state.dishProgress[dishId] = maxStars;
     saveProgress();
-    updateMenuUI();
+    renderMenu();
     document.getElementById('reveal3-continue').classList.add('show');
     state.busy = false;
   }, 4200);
@@ -1887,6 +2197,7 @@ document.getElementById('reveal3-continue').addEventListener('click', () => {
   playTap();
   document.getElementById('reveal3-continue').classList.remove('show');
   state.starsEarned = 0;
+  renderMenu();
   showScreen('screen-menu');
 });
 
@@ -1894,7 +2205,7 @@ document.getElementById('reveal3-continue').addEventListener('click', () => {
    INIT
    ============================================================ */
 loadProgress();
-updateMenuUI();
+renderMenu();
 
 // Prevent iOS bounce
 document.addEventListener('touchmove', function(e) {
