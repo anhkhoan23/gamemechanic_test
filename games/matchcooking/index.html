@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="World Cuisine">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#8b2e2e">
+<!-- Web manifest inline (data URI) - enables fullscreen PWA on Android -->
+<link rel="manifest" href='data:application/manifest+json,{"name":"World Cuisine","short_name":"Cuisine","display":"fullscreen","orientation":"portrait","background_color":"%23f5ecdc","theme_color":"%238b2e2e","start_url":"."}'>
 <title>World Cuisine — Phở Bò</title>
 <style>
 /* ============================================================
@@ -23,10 +28,17 @@
 html, body {
   width: 100%;
   height: 100%;
+  height: 100vh;
+  height: 100dvh; /* dynamic viewport height - adapts to browser chrome */
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Roboto, sans-serif;
   background: #1a1a1a;
   touch-action: manipulation;
+  /* iOS: prevent overscroll bounce */
+  overscroll-behavior: none;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 /* ============================================================
@@ -82,6 +94,7 @@ html, body {
   .app {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
   }
 }
 
@@ -419,6 +432,85 @@ html, body {
   white-space: nowrap;
 }
 .toast.show { opacity: 1; }
+
+/* Fullscreen hint dialog for iOS (Add to Home Screen) */
+.fs-hint {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+}
+.fs-hint.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.fs-hint-card {
+  background: linear-gradient(180deg, #fffaf0 0%, #fceac0 100%);
+  border-radius: 24px;
+  padding: 28px 22px;
+  margin: 0 24px;
+  max-width: 340px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+.fs-hint-card .fs-emoji {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+.fs-hint-card .fs-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #5a2020;
+  margin-bottom: 10px;
+}
+.fs-hint-card .fs-text {
+  font-size: 13px;
+  color: #5a4020;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.fs-hint-card .fs-text strong {
+  color: #8b2e2e;
+}
+.fs-hint-card .fs-steps {
+  background: rgba(212, 160, 57, 0.15);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #5a4020;
+  text-align: left;
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+.fs-hint-card .fs-btn {
+  width: 100%;
+  background: #8b2e2e;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.fs-hint-card .fs-btn:active { transform: scale(0.97); }
+.fs-hint-card .fs-dismiss {
+  display: block;
+  background: transparent;
+  border: none;
+  color: #8a6d4a;
+  font-size: 11px;
+  margin-top: 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
 
 /* ============================================================
    GAMEPLAY SCREEN
@@ -1074,6 +1166,18 @@ html, body {
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- Fullscreen hint (iOS users) -->
+    <div class="fs-hint" id="fs-hint">
+      <div class="fs-hint-card">
+        <div class="fs-emoji">📱</div>
+        <div class="fs-title" id="fs-title">Toàn màn hình</div>
+        <div class="fs-text" id="fs-text"></div>
+        <div class="fs-steps" id="fs-steps" style="display:none"></div>
+        <button class="fs-btn" id="fs-btn">Bắt đầu chơi</button>
+        <button class="fs-dismiss" id="fs-dismiss">Bỏ qua</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2206,6 +2310,91 @@ document.getElementById('reveal3-continue').addEventListener('click', () => {
    ============================================================ */
 loadProgress();
 renderMenu();
+
+/* ============================================================
+   FULLSCREEN HANDLING
+   - Android Chrome: use Fullscreen API on user gesture
+   - iOS Safari: no Fullscreen API → show "Add to Home Screen" hint
+   - Standalone (already added to home screen): no hint needed
+   ============================================================ */
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = window.navigator.standalone === true ||
+                     window.matchMedia('(display-mode: standalone)').matches ||
+                     window.matchMedia('(display-mode: fullscreen)').matches;
+const isMobileBrowser = /Mobi|Android/i.test(navigator.userAgent) || isIOS;
+const HINT_DISMISSED_KEY = 'worldcuisine_fs_dismissed';
+
+function tryRequestFullscreen() {
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen ||
+              el.mozRequestFullScreen || el.msRequestFullscreen;
+  if (req) {
+    try {
+      const p = req.call(el);
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) {}
+  }
+}
+
+function showFullscreenHint() {
+  if (isStandalone) return; // already fullscreen
+  if (!isMobileBrowser) return; // desktop doesn't need this
+  if (localStorage.getItem(HINT_DISMISSED_KEY) === '1') return;
+
+  const title = document.getElementById('fs-title');
+  const text = document.getElementById('fs-text');
+  const steps = document.getElementById('fs-steps');
+  const btn = document.getElementById('fs-btn');
+
+  if (isIOS) {
+    title.textContent = '📱 Trải nghiệm tốt nhất';
+    text.innerHTML = 'Để chơi <strong>toàn màn hình không có Safari</strong>, hãy thêm game vào màn hình chính:';
+    steps.style.display = 'block';
+    steps.innerHTML = `
+      <div>1. Bấm nút <strong>Chia sẻ</strong> ⬆️ ở thanh Safari</div>
+      <div>2. Chọn <strong>"Thêm vào màn hình chính"</strong></div>
+      <div>3. Mở app từ màn hình chính → toàn màn hình ✨</div>
+    `;
+    btn.textContent = 'Đã hiểu, chơi tiếp';
+  } else {
+    title.textContent = '📱 Toàn màn hình';
+    text.innerHTML = 'Bấm để ẩn thanh trình duyệt và chơi toàn màn hình.';
+    steps.style.display = 'none';
+    btn.textContent = '✨ Toàn màn hình';
+  }
+  document.getElementById('fs-hint').classList.add('show');
+}
+
+function dismissHint(rememberDismiss) {
+  document.getElementById('fs-hint').classList.remove('show');
+  if (rememberDismiss) {
+    try { localStorage.setItem(HINT_DISMISSED_KEY, '1'); } catch (e) {}
+  }
+}
+
+document.getElementById('fs-btn').addEventListener('click', () => {
+  ensureAudio();
+  if (!isIOS) tryRequestFullscreen();
+  dismissHint(true);
+});
+document.getElementById('fs-dismiss').addEventListener('click', () => {
+  dismissHint(true);
+});
+
+// Show hint on first load (if applicable)
+setTimeout(showFullscreenHint, 600);
+
+// On Android, also attempt fullscreen on any first user interaction
+// (Fullscreen API requires user gesture)
+let fsAttempted = false;
+function attemptFsOnFirstTap() {
+  if (fsAttempted || isIOS || isStandalone) return;
+  fsAttempted = true;
+  tryRequestFullscreen();
+}
+document.addEventListener('touchend', attemptFsOnFirstTap, { once: true, passive: true });
+document.addEventListener('click', attemptFsOnFirstTap, { once: true });
 
 // Prevent iOS bounce
 document.addEventListener('touchmove', function(e) {
