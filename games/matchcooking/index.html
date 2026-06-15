@@ -224,6 +224,17 @@ html, body {
   right: 6px;
   font-size: 14px;
 }
+.country-chip.locked .country-cost {
+  display: block;
+}
+.country-chip .country-cost {
+  display: none;
+  font-size: 9px;
+  font-weight: 700;
+  color: #b8861f;
+  margin-top: -1px;
+  letter-spacing: 0;
+}
 .country-chip .country-num {
   font-size: 11px;
   font-weight: 800;
@@ -263,12 +274,19 @@ html, body {
   gap: 8px;
 }
 .country-header .ch-flag { font-size: 22px; }
+.country-header .ch-middle {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
 .country-header .ch-progress-bar {
+  position: relative;
+  width: 100%;
   background: rgba(74, 40, 16, 0.25);
-  border-radius: 10px;
-  height: 14px;
+  border-radius: 12px;
+  height: 26px;
   overflow: hidden;
-  margin-bottom: 4px;
   border: 1px solid rgba(74, 40, 16, 0.4);
 }
 .country-header .ch-progress-fill {
@@ -285,6 +303,70 @@ html, body {
   letter-spacing: 0.3px;
 }
 
+/* Stars info overlaid on top of progress bar */
+.country-header .ch-stars-info {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5), 0 0 4px rgba(0,0,0,0.3);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Locked message inside ch-middle wrapper */
+.country-header .ch-locked-msg {
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  background: rgba(74, 40, 16, 0.18);
+  border-radius: 10px;
+  color: #2e1a08;
+  line-height: 1.3;
+}
+
+/* Locked country header — clickable, with shimmer */
+.country-header.locked {
+  cursor: pointer;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 60%),
+    linear-gradient(180deg, #c89a4c 0%, #a07830 100%);
+  position: relative;
+  overflow: hidden;
+}
+.country-header.locked::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 220, 100, 0.4) 50%, transparent 100%);
+  animation: shimmerSweep 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes shimmerSweep {
+  0%   { left: -50%; }
+  100% { left: 100%; }
+}
+.country-header.locked:active {
+  transform: scale(0.98);
+}
+.country-header .ch-lock-icon {
+  font-size: 18px;
+  margin-left: 6px;
+}
+.country-header .ch-progress-bar.locked-bar {
+  background: rgba(74, 40, 16, 0.4);
+}
+
 /* Dish grid: 2x2 + 1 wide */
 .dish-grid-5 {
   display: grid;
@@ -292,6 +374,35 @@ html, body {
   gap: 10px;
   padding: 0 12px;
   margin-bottom: 16px;
+}
+
+/* Cluster wrapper (4 clusters per country) */
+.cluster {
+  margin-bottom: 16px;
+}
+.cluster-header {
+  padding: 6px 18px 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #8b2e2e;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.cluster-header::before,
+.cluster-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 46, 46, 0.3), transparent);
+}
+.cluster-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 12px;
 }
 .dish-slot {
   position: relative;
@@ -400,8 +511,10 @@ html, body {
 }
 
 .menu-footer {
-  text-align: center;
-  padding: 12px 0 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 16px 50px;
   flex-shrink: 0;
 }
 .reset-btn {
@@ -722,6 +835,100 @@ html, body {
   100% { transform: scale(0); opacity: 0; }
 }
 
+/* ----- Prep animations for target ingredients ----- */
+.tray-slot .slot-item {
+  display: inline-block;
+  line-height: 1;
+}
+/* Bob the ingredient slightly while being "prepared" */
+.tray-slot[data-prep] .slot-item {
+  animation: prepBob 0.9s ease-in-out infinite;
+}
+@keyframes prepBob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%      { transform: translateY(-1px) rotate(-4deg); }
+  75%      { transform: translateY(1px) rotate(4deg); }
+}
+
+/* Chop: knife emoji swinging down on the ingredient */
+.tray-slot[data-prep="chop"]::after {
+  content: '🔪';
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  font-size: 20px;
+  transform-origin: 80% 90%;
+  animation: chopAnim 0.9s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 3;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+@keyframes chopAnim {
+  0%, 100% { transform: rotate(-35deg) translateY(-2px); }
+  40%      { transform: rotate(15deg) translateY(2px); }
+  60%      { transform: rotate(15deg) translateY(2px); }
+}
+
+/* Sparkle: shimmer around prepared items */
+.tray-slot[data-prep="sparkle"]::after {
+  content: '✨';
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  font-size: 16px;
+  animation: sparkleAnim 1.6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+@keyframes sparkleAnim {
+  0%, 100% { opacity: 0.4; transform: scale(0.7) rotate(0deg); }
+  50%      { opacity: 1;   transform: scale(1.15) rotate(180deg); }
+}
+.tray-slot[data-prep="sparkle"]::before {
+  content: '✨';
+  position: absolute;
+  bottom: -2px;
+  left: -2px;
+  font-size: 12px;
+  animation: sparkleAnim 1.6s ease-in-out infinite reverse;
+  animation-delay: 0.5s;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0.6;
+}
+
+/* Steam: rising puffs from hot tools */
+.tray-slot[data-prep="steam"]::after {
+  content: '💨';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  margin-left: -10px;
+  font-size: 16px;
+  animation: steamAnim 1.4s ease-out infinite;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+@keyframes steamAnim {
+  0%   { transform: translateY(4px) scale(0.5); opacity: 0; }
+  30%  { opacity: 0.8; }
+  100% { transform: translateY(-14px) scale(1.3); opacity: 0; }
+}
+.tray-slot[data-prep="steam"]::before {
+  content: '💨';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  margin-left: -10px;
+  font-size: 14px;
+  animation: steamAnim 1.4s ease-out infinite;
+  animation-delay: 0.7s;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
 /* Bottom button */
 .bottom-controls {
   padding: 8px 16px 24px;
@@ -1009,17 +1216,17 @@ html, body {
         <button class="top-pill icon-only" data-toast="Hồ sơ người chơi">
           <span class="icon">👤</span>
         </button>
-        <button class="top-pill icon-only" data-toast="Bảng xếp hạng">
-          <span class="icon">👑</span>
+        <button class="top-pill icon-only" data-toast="Sổ tay & Thành tích">
+          <span class="icon">📓</span>
         </button>
         <button class="top-pill resource" data-toast="Tim sống">
           <span class="icon">❤️</span><span>Full</span>
         </button>
-        <button class="top-pill resource" data-toast="Tiền vàng">
-          <span class="icon">🪙</span><span>0</span>
+        <button class="top-pill resource" id="cash-btn" data-toast="Tiền">
+          <span class="icon">💵</span><span id="cash-amount">1000</span>
         </button>
-        <button class="top-pill icon-only" data-toast="Quà hàng ngày">
-          <span class="icon">🎁</span>
+        <button class="top-pill icon-only" data-toast="Cửa hàng">
+          <span class="icon">🛒</span>
         </button>
       </div>
 
@@ -1038,6 +1245,29 @@ html, body {
 
         <div class="menu-footer">
           <button class="reset-btn" id="reset-btn">↺ Reset progress</button>
+        </div>
+      </div>
+
+      <!-- Unlock country popup -->
+      <div class="popup-overlay" id="unlock-popup">
+        <div class="popup">
+          <div class="popup-emoji" id="unlock-emoji">🔓</div>
+          <div class="popup-title" id="unlock-title">Mở khóa nền ẩm thực</div>
+          <div class="popup-text" id="unlock-text">Khám phá 20 món ăn đặc trưng của quốc gia này.</div>
+          <button class="popup-btn primary" id="unlock-pay">💵 Trả 100</button>
+          <button class="popup-btn primary" id="unlock-ads" style="background:#2d8a4f;">📺 Xem ads (miễn phí)</button>
+          <button class="popup-btn secondary" id="unlock-cancel">Để sau</button>
+        </div>
+      </div>
+
+      <!-- Unlock dish popup (ads-only, for "play ahead") -->
+      <div class="popup-overlay" id="dish-unlock-popup">
+        <div class="popup">
+          <div class="popup-emoji" id="dish-unlock-emoji">🔓</div>
+          <div class="popup-title" id="dish-unlock-title">Mở khóa món</div>
+          <div class="popup-text" id="dish-unlock-text">Chơi vượt — xem một quảng cáo ngắn để mở khóa món này.</div>
+          <button class="popup-btn primary" id="dish-unlock-ads" style="background:#2d8a4f;">📺 Xem ads (miễn phí)</button>
+          <button class="popup-btn secondary" id="dish-unlock-cancel">Để sau</button>
         </div>
       </div>
     </div>
@@ -1193,9 +1423,9 @@ const LEVELS = [
     id: 1,
     name: 'Màn 1 — Đi chợ sáng',
     targets: [
-      { emoji: '🦴', name: 'Xương bò', count: 3 },
-      { emoji: '🥩', name: 'Thịt bò', count: 3 },
-      { emoji: '🍜', name: 'Bánh phở', count: 3 }
+      { emoji: '🦴', name: 'Xương bò', count: 9, prep: 'chop' },
+      { emoji: '🥩', name: 'Thịt bò', count: 9, prep: 'chop' },
+      { emoji: '🍜', name: 'Bánh phở', count: 9, prep: 'sparkle' }
     ],
     distractors: ['🧀', '🍕', '🫑', '🥑', '🍣', '🥖', '🍤']
   },
@@ -1203,8 +1433,8 @@ const LEVELS = [
     id: 2,
     name: 'Màn 2 — Củ & rễ',
     targets: [
-      { emoji: '🧅', name: 'Hành tây', count: 3 },
-      { emoji: '🫚', name: 'Gừng', count: 3 }
+      { emoji: '🧅', name: 'Hành tây', count: 9, prep: 'chop' },
+      { emoji: '🫚', name: 'Gừng', count: 9, prep: 'chop' }
     ],
     distractors: ['🥕', '🥔', '🧄', '🌽', '🍠', '🥒']
   },
@@ -1212,9 +1442,9 @@ const LEVELS = [
     id: 3,
     name: 'Màn 3 — Kệ gia vị nướng',
     targets: [
-      { emoji: '⭐', name: 'Hoa hồi', count: 3 },
-      { emoji: '🪵', name: 'Quế', count: 3 },
-      { emoji: '🟤', name: 'Thảo quả', count: 3 }
+      { emoji: '⭐', name: 'Hoa hồi', count: 9, prep: 'sparkle' },
+      { emoji: '🪵', name: 'Quế', count: 9, prep: 'sparkle' },
+      { emoji: '🟤', name: 'Thảo quả', count: 9, prep: 'sparkle' }
     ],
     distractors: ['🌿', '🍃', '🌶️', '🍵', '🥜']
   },
@@ -1223,8 +1453,8 @@ const LEVELS = [
     id: 4,
     name: 'Màn 4 — Gia vị nêm',
     targets: [
-      { emoji: '🍶', name: 'Nước mắm', count: 3 },
-      { emoji: '🧂', name: 'Muối', count: 3 }
+      { emoji: '🍶', name: 'Nước mắm', count: 9, prep: 'sparkle' },
+      { emoji: '🧂', name: 'Muối', count: 9, prep: 'sparkle' }
     ],
     distractors: ['🍯', '🍷', '🥛', '🫙']
   },
@@ -1232,10 +1462,10 @@ const LEVELS = [
     id: 5,
     name: 'Màn 5 — Rau ăn kèm',
     targets: [
-      { emoji: '🌱', name: 'Hành lá', count: 3 },
-      { emoji: '🌿', name: 'Giá đỗ', count: 3 },
-      { emoji: '🍋', name: 'Chanh', count: 3 },
-      { emoji: '🌶️', name: 'Ớt', count: 3 }
+      { emoji: '🌱', name: 'Hành lá', count: 9, prep: 'chop' },
+      { emoji: '🌿', name: 'Giá đỗ', count: 9, prep: 'sparkle' },
+      { emoji: '🍋', name: 'Chanh', count: 9, prep: 'chop' },
+      { emoji: '🌶️', name: 'Ớt', count: 9, prep: 'chop' }
     ],
     distractors: ['🥬', '🥦', '🍅', '🫑', '🍊', '🥝']
   },
@@ -1243,9 +1473,9 @@ const LEVELS = [
     id: 6,
     name: 'Màn 6 — Dụng cụ nấu',
     targets: [
-      { emoji: '🍲', name: 'Nồi', count: 3 },
-      { emoji: '🪵', name: 'Thớt', count: 3 },
-      { emoji: '🥄', name: 'Vá', count: 3 }
+      { emoji: '🍲', name: 'Nồi', count: 9, prep: 'steam' },
+      { emoji: '🪵', name: 'Thớt', count: 9, prep: 'sparkle' },
+      { emoji: '🥄', name: 'Vá', count: 9, prep: 'sparkle' }
     ],
     distractors: ['🍳', '🔪', '🍴', '☕']
   },
@@ -1254,101 +1484,346 @@ const LEVELS = [
     id: 7,
     name: 'Màn 7 — Bàn ăn',
     targets: [
-      { emoji: '🍜', name: 'Tô phở', count: 3 },
-      { emoji: '🥢', name: 'Đũa', count: 3 },
-      { emoji: '🥄', name: 'Muỗng', count: 3 }
+      { emoji: '🍜', name: 'Tô phở', count: 9, prep: 'steam' },
+      { emoji: '🥢', name: 'Đũa', count: 9, prep: 'sparkle' },
+      { emoji: '🥄', name: 'Muỗng', count: 9, prep: 'sparkle' }
     ],
     distractors: ['🍽️', '🍵', '🥛', '🍷']
   }
 ];
 
-const REVEAL_AFTER = { 3: 1, 6: 2, 7: 3 }; // level id -> reveal num
-const LEVEL_TIME = 60;    // seconds per level
-const ADS_BONUS_TIME = 20; // seconds added when "watching ads"
+const REVEAL_AFTER = { 3: 1, 6: 2, 7: 3 };
+const LEVEL_TIME = 60;
+const ADS_BONUS_TIME = 20;
+const STARTING_CASH = 1000;
+const COUNTRY_UNLOCK_COST = 100;
+const LEVEL_WIN_REWARD = 10;     // cash per level passed
+const DISH_COMPLETE_REWARD = 50; // cash per dish fully completed
 
 /* ============================================================
-   DISH ROSTER — 6 countries × 5 dishes = 30 dishes
-   Only "pho" is playable in this prototype; others are placeholders
+   DISH ROSTER — 20 countries × 20 dishes (400 dishes total)
+   Each country has 4 clusters of 5 dishes (positions 1-5 of each cluster)
+   Star pattern per cluster: 3-4, 4-5, 5-6, 6, 7
+   Only "pho" is playable (Việt Nam, dish #5 = boss of cluster 1)
+   Costs: Việt Nam = 0 (free), others = 100 cash to unlock
    ============================================================ */
+
+// Star pattern applied to every country's 20 dishes (positions 1-20)
+const STARS = [3,4,5,6,7, 4,5,6,6,7, 3,4,5,6,7, 4,5,6,6,7];
+
+// Helper to build dish entries (id, name, emoji [+ optional playable flag])
+function D(id, name, emoji, playable) {
+  return playable
+    ? { id, name, emoji, playable: true }
+    : { id, name, emoji };
+}
+
+// Apply star counts to each country's dish array
+function makeDishes(arr) {
+  return arr.map((d, i) => ({ ...d, starCount: STARS[i] }));
+}
+
 const COUNTRIES = [
-  {
-    id: 'vn',
-    flag: '🇻🇳',
-    name: 'Việt Nam',
-    signature: '🍜',
-    dishes: [
-      { id: 'pho',         name: 'Phở Bò',     emoji: '🍜', playable: true,  starCount: 7 },
-      { id: 'goi-cuon',    name: 'Gỏi cuốn',   emoji: '🥬', playable: false, starCount: 4 },
-      { id: 'banh-mi',     name: 'Bánh mì',    emoji: '🥖', playable: false, starCount: 4 },
-      { id: 'bun-cha',     name: 'Bún chả',    emoji: '🍢', playable: false, starCount: 5 },
-      { id: 'bun-bo-hue',  name: 'Bún bò Huế', emoji: '🌶️', playable: false, starCount: 6 }
-    ]
-  },
-  {
-    id: 'it',
-    flag: '🇮🇹',
-    name: 'Italia',
-    signature: '🍕',
-    dishes: [
-      { id: 'pizza',       name: 'Pizza Margherita', emoji: '🍕', playable: false, starCount: 5 },
-      { id: 'bruschetta',  name: 'Bruschetta',       emoji: '🍅', playable: false, starCount: 3 },
-      { id: 'carbonara',   name: 'Carbonara',        emoji: '🍝', playable: false, starCount: 5 },
-      { id: 'lasagna',     name: 'Lasagna',          emoji: '🧀', playable: false, starCount: 6 },
-      { id: 'risotto',     name: 'Risotto ai funghi', emoji: '🍄', playable: false, starCount: 6 }
-    ]
-  },
-  {
-    id: 'jp',
-    flag: '🇯🇵',
-    name: 'Nhật Bản',
-    signature: '🍣',
-    dishes: [
-      { id: 'sushi',       name: 'Sushi',     emoji: '🍣', playable: false, starCount: 5 },
-      { id: 'tempura',     name: 'Tempura',   emoji: '🍤', playable: false, starCount: 4 },
-      { id: 'onigiri',     name: 'Onigiri',   emoji: '🍙', playable: false, starCount: 3 },
-      { id: 'takoyaki',    name: 'Takoyaki',  emoji: '🐙', playable: false, starCount: 5 },
-      { id: 'ramen',       name: 'Ramen Tonkotsu', emoji: '🍜', playable: false, starCount: 7 }
-    ]
-  },
-  {
-    id: 'fr',
-    flag: '🇫🇷',
-    name: 'Pháp',
-    signature: '🥐',
-    dishes: [
-      { id: 'croissant',   name: 'Croissant',     emoji: '🥐', playable: false, starCount: 4 },
-      { id: 'crepe',       name: 'Crêpe',         emoji: '🥞', playable: false, starCount: 3 },
-      { id: 'croque',      name: 'Croque-monsieur', emoji: '🥪', playable: false, starCount: 4 },
-      { id: 'ratatouille', name: 'Ratatouille',   emoji: '🍆', playable: false, starCount: 6 },
-      { id: 'bouillabaisse', name: 'Bouillabaisse', emoji: '🦞', playable: false, starCount: 7 }
-    ]
-  },
-  {
-    id: 'mx',
-    flag: '🇲🇽',
-    name: 'Mexico',
-    signature: '🌮',
-    dishes: [
-      { id: 'taco',        name: 'Taco al pastor', emoji: '🌮', playable: false, starCount: 5 },
-      { id: 'guacamole',   name: 'Guacamole',      emoji: '🥑', playable: false, starCount: 3 },
-      { id: 'quesadilla',  name: 'Quesadilla',     emoji: '🫓', playable: false, starCount: 4 },
-      { id: 'burrito',     name: 'Burrito',        emoji: '🌯', playable: false, starCount: 5 },
-      { id: 'enchilada',   name: 'Enchiladas',     emoji: '🫔', playable: false, starCount: 6 }
-    ]
-  },
-  {
-    id: 'in',
-    flag: '🇮🇳',
-    name: 'Ấn Độ',
-    signature: '🍛',
-    dishes: [
-      { id: 'naan',        name: 'Naan',           emoji: '🫓', playable: false, starCount: 3 },
-      { id: 'samosa',      name: 'Samosa',         emoji: '🥟', playable: false, starCount: 4 },
-      { id: 'tikka',       name: 'Tikka Masala',   emoji: '🍛', playable: false, starCount: 5 },
-      { id: 'biryani',     name: 'Biryani',        emoji: '🍚', playable: false, starCount: 6 },
-      { id: 'curry-thali', name: 'Curry Thali',    emoji: '🍱', playable: false, starCount: 7 }
-    ]
-  }
+  { id: 'vn', flag: '🇻🇳', name: 'Việt Nam', signature: '🍜', cost: 0,
+    dishes: makeDishes([
+      D('vn-goi-cuon','Gỏi cuốn','🥬'),       D('vn-banh-mi','Bánh mì','🥖'),
+      D('vn-bun-cha','Bún chả','🍢'),         D('vn-bun-bo-hue','Bún bò Huế','🌶️'),
+      D('pho','Phở Bò','🍜', true), // <-- Boss, position 5, PLAYABLE
+      D('vn-com-tam','Cơm tấm','🍚'),         D('vn-banh-xeo','Bánh xèo','🥞'),
+      D('vn-cha-gio','Chả giò','🥟'),         D('vn-hu-tieu','Hủ tiếu','🍜'),
+      D('vn-cao-lau','Cao lầu','🍲'),
+      D('vn-banh-cuon','Bánh cuốn','🫔'),     D('vn-mi-quang','Mì Quảng','🍝'),
+      D('vn-bun-rieu','Bún riêu','🦀'),       D('vn-banh-khot','Bánh khọt','🧇'),
+      D('vn-bun-mam','Bún mắm','🐟'),
+      D('vn-nem-lui','Nem lụi','🍢'),         D('vn-bot-chien','Bột chiên','🍳'),
+      D('vn-banh-beo','Bánh bèo','🥣'),       D('vn-chao-long','Cháo lòng','🍚'),
+      D('vn-lau-mam','Lẩu mắm','🥘')
+    ])},
+  { id: 'cn', flag: '🇨🇳', name: 'Trung Quốc', signature: '🥟', cost: 100,
+    dishes: makeDishes([
+      D('cn-ha-cao','Há cảo','🥟'),           D('cn-com-chien','Cơm chiên','🍚'),
+      D('cn-mi-xao','Mì xào','🍜'),           D('cn-kung-pao','Gà Kung Pao','🍗'),
+      D('cn-vit-quay','Vịt quay Bắc Kinh','🦆'),
+      D('cn-banh-bao','Bánh bao','🍞'),       D('cn-tom-xao','Tôm xào','🍤'),
+      D('cn-suon-chua-ngot','Sườn chua ngọt','🍖'), D('cn-mapo','Mapo Tofu','🌶️'),
+      D('cn-lau-tu-xuyen','Lẩu Tứ Xuyên','🍲'),
+      D('cn-ca-hap','Cá hấp','🐟'),           D('cn-com-ga','Cơm gà','🍗'),
+      D('cn-hoanh-thanh','Hoành thánh','🥟'), D('cn-dim-sum','Dim sum','🫕'),
+      D('cn-cua-xao','Cua xào','🦀'),
+      D('cn-mi-keo-tay','Mì kéo tay','🍝'),   D('cn-banh-to','Bánh tổ','🍰'),
+      D('cn-banh-trung-thu','Bánh trung thu','🥮'), D('cn-xa-xiu','Bánh bao xá xíu','🥯'),
+      D('cn-hoang-de','Tiệc Hoàng Đế','🍱')
+    ])},
+  { id: 'jp', flag: '🇯🇵', name: 'Nhật Bản', signature: '🍣', cost: 100,
+    dishes: makeDishes([
+      D('jp-onigiri','Onigiri','🍙'),         D('jp-tempura','Tempura','🍤'),
+      D('jp-takoyaki','Takoyaki','🐙'),       D('jp-yakitori','Yakitori','🍢'),
+      D('jp-sushi','Sushi','🍣'),
+      D('jp-donburi','Donburi','🍚'),         D('jp-udon','Udon','🍜'),
+      D('jp-soba','Soba','🍝'),               D('jp-karaage','Karaage','🍗'),
+      D('jp-ramen','Ramen Tonkotsu','🍜'),
+      D('jp-okonomiyaki','Okonomiyaki','🥞'), D('jp-gyoza','Gyoza','🥟'),
+      D('jp-yakisoba','Yakisoba','🍜'),       D('jp-sukiyaki','Sukiyaki','🥘'),
+      D('jp-kaiseki','Kaiseki','🍱'),
+      D('jp-tonkatsu','Tonkatsu','🍖'),       D('jp-unagi','Unagi','🐟'),
+      D('jp-wagyu','Wagyu BBQ','🥩'),         D('jp-chirashi','Chirashi','🍣'),
+      D('jp-omakase','Omakase Royal','🍱')
+    ])},
+  { id: 'kr', flag: '🇰🇷', name: 'Hàn Quốc', signature: '🍱', cost: 100,
+    dishes: makeDishes([
+      D('kr-kimchi','Kimchi','🥬'),           D('kr-kimbap','Kimbap','🍙'),
+      D('kr-tteokbokki','Tteokbokki','🌶️'),    D('kr-japchae','Japchae','🍜'),
+      D('kr-bibimbap','Bibimbap','🍚'),
+      D('kr-pajeon','Pajeon','🥞'),           D('kr-mandu','Mandu','🥟'),
+      D('kr-sundubu','Sundubu','🍲'),         D('kr-galbi','Galbi','🍖'),
+      D('kr-bbq','Korean BBQ','🥩'),
+      D('kr-jjajang','Jjajangmyeon','🍝'),    D('kr-naengmyeon','Naengmyeon','🍜'),
+      D('kr-bossam','Bossam','🥩'),           D('kr-samgyetang','Samgyetang','🍗'),
+      D('kr-galbitang','Galbitang','🥘'),
+      D('kr-yangnyeom','Yangnyeom Chicken','🍗'), D('kr-tteokguk','Tteokguk','🥣'),
+      D('kr-sundae','Sundae','🌭'),           D('kr-budae','Budae Jjigae','🍲'),
+      D('kr-hanjeongsik','Hanjeongsik Royal','🍱')
+    ])},
+  { id: 'th', flag: '🇹🇭', name: 'Thái Lan', signature: '🦐', cost: 100,
+    dishes: makeDishes([
+      D('th-som-tam','Som Tam','🥗'),         D('th-pad-thai','Pad Thai','🍜'),
+      D('th-tom-kha','Tom Kha Gai','🥥'),     D('th-green-curry','Green Curry','🍛'),
+      D('th-tom-yum','Tom Yum','🦐'),
+      D('th-khao-pad','Khao Pad','🍚'),       D('th-pad-krapow','Pad Krapow','🌶️'),
+      D('th-satay','Satay','🍢'),             D('th-pad-see-ew','Pad See Ew','🍝'),
+      D('th-massaman','Massaman Curry','🍛'),
+      D('th-larb','Larb','🥩'),               D('th-mango-rice','Mango Sticky Rice','🥭'),
+      D('th-khao-soi','Khao Soi','🍜'),       D('th-boat-noodle','Boat Noodle','🍲'),
+      D('th-royal-banquet','Royal Thai Banquet','🍱'),
+      D('th-pla-pao','Pla Pao','🐟'),         D('th-yum-woonsen','Yum Woon Sen','🥗'),
+      D('th-gaeng-daeng','Gaeng Daeng','🍛'), D('th-khao-niao','Khao Niao Mamuang','🍙'),
+      D('th-royal-feast','Royal Thai Feast','🍱')
+    ])},
+  { id: 'id', flag: '🇮🇩', name: 'Indonesia', signature: '🍚', cost: 100,
+    dishes: makeDishes([
+      D('id-gado','Gado-gado','🥗'),          D('id-nasi-goreng','Nasi Goreng','🍚'),
+      D('id-sate','Sate','🍢'),               D('id-mie-goreng','Mie Goreng','🍜'),
+      D('id-rendang','Rendang','🍖'),
+      D('id-bakso','Bakso','🥣'),             D('id-soto','Soto','🍲'),
+      D('id-gudeg','Gudeg','🍛'),             D('id-ayam-penyet','Ayam Penyet','🍗'),
+      D('id-nasi-padang','Nasi Padang','🍱'),
+      D('id-pempek','Pempek','🐟'),           D('id-bubur-ayam','Bubur Ayam','🍚'),
+      D('id-sayur-asem','Sayur Asem','🥬'),   D('id-rawon','Rawon','🍲'),
+      D('id-tumpeng','Tumpeng Royal','🍙'),
+      D('id-nasi-kuning','Nasi Kuning','🍙'), D('id-ikan-bakar','Ikan Bakar','🐟'),
+      D('id-sop-buntut','Sop Buntut','🍖'),   D('id-lontong','Lontong Sayur','🍚'),
+      D('id-royal-feast','Indonesian Royal Feast','🍱')
+    ])},
+  { id: 'my', flag: '🇲🇾', name: 'Malaysia', signature: '🍙', cost: 100,
+    dishes: makeDishes([
+      D('my-roti-canai','Roti Canai','🫓'),   D('my-nasi-lemak','Nasi Lemak','🍙'),
+      D('my-satay','Satay','🍢'),             D('my-char-kway','Char Kway Teow','🍜'),
+      D('my-laksa','Laksa','🍲'),
+      D('my-mee-rebus','Mee Rebus','🍜'),     D('my-curry-mee','Curry Mee','🍛'),
+      D('my-hokkien-mee','Hokkien Mee','🍝'), D('my-beef-rendang','Beef Rendang','🥩'),
+      D('my-bak-kut-teh','Bak Kut Teh','🍖'),
+      D('my-ayam-percik','Ayam Percik','🍗'), D('my-kuih','Kuih','🍡'),
+      D('my-asam-pedas','Ikan Asam Pedas','🐟'), D('my-kerabu','Kerabu','🥗'),
+      D('my-nasi-kandar','Nasi Kandar','🍱'),
+      D('my-hainanese','Hainanese Chicken Rice','🍗'), D('my-otak-otak','Otak-otak','🐟'),
+      D('my-cendol','Cendol','🧊'),           D('my-pulut-hitam','Pulut Hitam','🍚'),
+      D('my-sultan-feast','Sultan Feast','🍱')
+    ])},
+  { id: 'in', flag: '🇮🇳', name: 'Ấn Độ', signature: '🍛', cost: 100,
+    dishes: makeDishes([
+      D('in-naan','Naan','🫓'),               D('in-samosa','Samosa','🥟'),
+      D('in-tikka','Tikka Masala','🍛'),      D('in-biryani','Biryani','🍚'),
+      D('in-curry-thali','Curry Thali','🍱'),
+      D('in-butter-chicken','Butter Chicken','🍗'), D('in-palak-paneer','Palak Paneer','🥬'),
+      D('in-dal-makhani','Dal Makhani','🫘'), D('in-tandoori','Tandoori Chicken','🍢'),
+      D('in-rogan-josh','Roghan Josh','🍖'),
+      D('in-aloo-gobi','Aloo Gobi','🥔'),     D('in-dosa','Dosa','🥞'),
+      D('in-vindaloo','Vindaloo','🌶️'),       D('in-korma','Korma','🍛'),
+      D('in-hyderabadi','Hyderabadi Biryani','🍚'),
+      D('in-chettinad','Chicken Chettinad','🍗'), D('in-goan-fish','Goan Fish Curry','🐟'),
+      D('in-saag-paneer','Saag Paneer','🧀'), D('in-lamb-rogan','Lamb Rogan','🥩'),
+      D('in-maharaja','Maharaja Thali','🍱')
+    ])},
+  { id: 'it', flag: '🇮🇹', name: 'Italia', signature: '🍕', cost: 100,
+    dishes: makeDishes([
+      D('it-bruschetta','Bruschetta','🍅'),   D('it-margherita','Margherita Pizza','🍕'),
+      D('it-carbonara','Carbonara','🍝'),     D('it-lasagna','Lasagna','🧀'),
+      D('it-risotto','Risotto ai Funghi','🍄'),
+      D('it-caprese','Caprese','🥗'),         D('it-gnocchi','Gnocchi','🥟'),
+      D('it-pesto','Pesto Genovese','🌿'),    D('it-cacio','Cacio e Pepe','🧀'),
+      D('it-osso-buco','Osso Buco','🍖'),
+      D('it-tiramisu','Tiramisu','🍰'),       D('it-gelato','Gelato','🍦'),
+      D('it-bolognese','Spaghetti Bolognese','🍝'), D('it-saltimbocca','Saltimbocca','🍗'),
+      D('it-florentine','Florentine Steak','🥩'),
+      D('it-fritto-misto','Fritto Misto','🦞'), D('it-tagliatelle','Tagliatelle Tartufo','🍝'),
+      D('it-cassata','Cassata Siciliana','🍰'), D('it-ossobuco-mil','Ossobuco Milanese','🍖'),
+      D('it-royal','Royal Italian Feast','🍱')
+    ])},
+  { id: 'fr', flag: '🇫🇷', name: 'Pháp', signature: '🥐', cost: 100,
+    dishes: makeDishes([
+      D('fr-crepe','Crêpe','🥞'),             D('fr-croissant','Croissant','🥐'),
+      D('fr-croque','Croque-monsieur','🥪'),  D('fr-ratatouille','Ratatouille','🍆'),
+      D('fr-bouillabaisse','Bouillabaisse','🦞'),
+      D('fr-quiche','Quiche Lorraine','🥧'),  D('fr-souffle','Soufflé','🧀'),
+      D('fr-coq-au-vin','Coq au Vin','🍗'),   D('fr-cassoulet','Cassoulet','🫘'),
+      D('fr-bourguignon','Beef Bourguignon','🥩'),
+      D('fr-onion-soup','Onion Soup','🧅'),   D('fr-steak-frites','Steak Frites','🍟'),
+      D('fr-duck-confit','Duck Confit','🦆'), D('fr-stroganoff','Boeuf Stroganoff','🍖'),
+      D('fr-foie-gras','Foie Gras','🥧'),
+      D('fr-escargot','Escargot','🐌'),       D('fr-coquilles','Coquilles St Jacques','🦪'),
+      D('fr-macarons','Macarons','🍪'),       D('fr-creme-brulee','Crème Brûlée','🍮'),
+      D('fr-versailles','Versailles Royal Feast','🍱')
+    ])},
+  { id: 'es', flag: '🇪🇸', name: 'Tây Ban Nha', signature: '🥘', cost: 100,
+    dishes: makeDishes([
+      D('es-tortilla','Tortilla','🥚'),       D('es-patatas','Patatas Bravas','🥔'),
+      D('es-tapas','Tapas','🍢'),             D('es-gazpacho','Gazpacho','🥗'),
+      D('es-paella','Paella','🥘'),
+      D('es-churros','Churros','🍩'),         D('es-croquetas','Croquetas','🍢'),
+      D('es-jamon','Jamón Ibérico','🥓'),     D('es-pulpo','Pulpo a la Gallega','🐙'),
+      D('es-cocido','Cocido Madrileño','🍲'),
+      D('es-fabada','Fabada Asturiana','🫘'), D('es-bacalao','Bacalao','🐟'),
+      D('es-pisto','Pisto','🍅'),             D('es-sangria','Sangria','🍷'),
+      D('es-rabo-toro','Rabo de Toro','🐂'),
+      D('es-gambas','Gambas al Ajillo','🦐'), D('es-cochinillo','Cochinillo','🐖'),
+      D('es-crema','Crema Catalana','🍮'),    D('es-lechon','Lechón Asado','🍖'),
+      D('es-royal-feast','Royal Spanish Feast','🍱')
+    ])},
+  { id: 'gr', flag: '🇬🇷', name: 'Hy Lạp', signature: '🥗', cost: 100,
+    dishes: makeDishes([
+      D('gr-salad','Greek Salad','🥗'),       D('gr-tzatziki','Tzatziki','🥒'),
+      D('gr-souvlaki','Souvlaki','🍢'),       D('gr-moussaka','Moussaka','🍆'),
+      D('gr-lamb','Roast Lamb','🥩'),
+      D('gr-spanakopita','Spanakopita','🥬'), D('gr-baklava','Baklava','🍯'),
+      D('gr-pastitsio','Pastitsio','🍝'),     D('gr-dolma','Dolma','🍃'),
+      D('gr-gyros','Gyros','🌯'),
+      D('gr-saganaki','Saganaki','🧀'),       D('gr-avgolemono','Avgolemono','🍋'),
+      D('gr-octopus','Octopus','🐙'),         D('gr-stifado','Stifado','🍲'),
+      D('gr-kleftiko','Kleftiko','🍖'),
+      D('gr-whole-fish','Whole Fish','🐟'),   D('gr-loukoumades','Loukoumades','🍩'),
+      D('gr-galaktoboureko','Galaktoboureko','🍰'), D('gr-mezethes','Mezethes','🍱'),
+      D('gr-olympian','Olympian Royal Feast','🍱')
+    ])},
+  { id: 'tr', flag: '🇹🇷', name: 'Thổ Nhĩ Kỳ', signature: '🥙', cost: 100,
+    dishes: makeDishes([
+      D('tr-pide','Pide','🫓'),               D('tr-kofte','Köfte','🍢'),
+      D('tr-lahmacun','Lahmacun','🍕'),       D('tr-manti','Manti','🥟'),
+      D('tr-adana','Adana Kebab','🌶️'),
+      D('tr-borek','Borek','🥐'),             D('tr-dolma','Dolma','🍃'),
+      D('tr-mercimek','Mercimek Soup','🍲'),  D('tr-iskender','Iskender Kebab','🥙'),
+      D('tr-lamb-tandir','Lamb Tandır','🍖'),
+      D('tr-imam','Imam Bayildi','🍆'),       D('tr-pilav','Pilav','🍚'),
+      D('tr-manti-yogurt','Manti Yogurt','🥟'), D('tr-kuzu','Kuzu Kavurma','🐑'),
+      D('tr-kunefe','Künefe','🧀'),
+      D('tr-sac-tava','Saç Tava','🥘'),       D('tr-karniyarik','Karnıyarık','🍆'),
+      D('tr-baklava','Baklava','🍯'),         D('tr-lokum','Lokum','🍬'),
+      D('tr-ottoman','Ottoman Royal Feast','🍱')
+    ])},
+  { id: 'mx', flag: '🇲🇽', name: 'Mexico', signature: '🌮', cost: 100,
+    dishes: makeDishes([
+      D('mx-guacamole','Guacamole','🥑'),     D('mx-quesadilla','Quesadilla','🫓'),
+      D('mx-taco','Taco al Pastor','🌮'),     D('mx-burrito','Burrito','🌯'),
+      D('mx-enchiladas','Enchiladas','🫔'),
+      D('mx-tamales','Tamales','🫔'),         D('mx-pozole','Pozole','🍲'),
+      D('mx-chiles-rellenos','Chiles Rellenos','🌶️'), D('mx-carnitas','Carnitas','🍖'),
+      D('mx-mole','Mole Poblano','🍫'),
+      D('mx-sopes','Sopes','🌮'),             D('mx-ceviche','Ceviche','🐟'),
+      D('mx-birria','Birria','🥩'),           D('mx-cochinita','Cochinita Pibil','🐖'),
+      D('mx-pescado','Pescado Veracruz','🐠'),
+      D('mx-nogada','Chiles en Nogada','🌶️'),  D('mx-cabrito','Cabrito','🐐'),
+      D('mx-tres-leches','Tres Leches','🍰'), D('mx-mole-negro','Mole Negro','🌑'),
+      D('mx-aztec','Aztec Royal Feast','🍱')
+    ])},
+  { id: 'br', flag: '🇧🇷', name: 'Brazil', signature: '🍖', cost: 100,
+    dishes: makeDishes([
+      D('br-pao-queijo','Pão de Queijo','🧀'), D('br-coxinha','Coxinha','🍗'),
+      D('br-brigadeiro','Brigadeiro','🍫'),   D('br-acai','Açaí Bowl','🍇'),
+      D('br-feijoada','Feijoada','🍲'),
+      D('br-tapioca','Tapioca','🥞'),         D('br-moqueca','Moqueca','🐟'),
+      D('br-picanha','Picanha','🥩'),         D('br-vatapa','Vatapá','🥘'),
+      D('br-churrasco','Churrasco','🍖'),
+      D('br-acaraje','Acarajé','🍤'),         D('br-pamonha','Pamonha','🌽'),
+      D('br-caruru','Caruru','🥬'),           D('br-bobo','Bobó de Camarão','🦐'),
+      D('br-galinhada','Galinhada','🍗'),
+      D('br-costela','Costela','🍖'),         D('br-rabada','Rabada','🐂'),
+      D('br-caipirinha','Caipirinha','🍹'),   D('br-quindim','Quindim','🍮'),
+      D('br-royal-feast','Brazilian Royal Feast','🍱')
+    ])},
+  { id: 'pe', flag: '🇵🇪', name: 'Peru', signature: '🐟', cost: 100,
+    dishes: makeDishes([
+      D('pe-causa','Causa','🥔'),             D('pe-ceviche','Ceviche','🐟'),
+      D('pe-anticuchos','Anticuchos','🍢'),   D('pe-aji-gallina','Ají de Gallina','🍗'),
+      D('pe-lomo','Lomo Saltado','🥩'),
+      D('pe-papa-rellena','Papa Rellena','🥔'), D('pe-tiradito','Tiradito','🐟'),
+      D('pe-pollo-brasa','Pollo a la Brasa','🍗'), D('pe-rocoto','Rocoto Relleno','🌶️'),
+      D('pe-cuy','Cuy Chactado','🐹'),
+      D('pe-tacu','Tacu Tacu','🍚'),          D('pe-picarones','Picarones','🍩'),
+      D('pe-chicha','Chicha Morada','🍷'),    D('pe-arroz-pato','Arroz con Pato','🦆'),
+      D('pe-pachamanca','Pachamanca','🥘'),
+      D('pe-aji-pescado','Ají de Pescado','🐟'), D('pe-cau-cau','Cau Cau','🍲'),
+      D('pe-suspiro','Suspiro Limeño','🍮'),  D('pe-aguadito','Aguadito','🥣'),
+      D('pe-inca','Inca Royal Feast','🍱')
+    ])},
+  { id: 'us', flag: '🇺🇸', name: 'Mỹ', signature: '🍔', cost: 100,
+    dishes: makeDishes([
+      D('us-hotdog','Hot Dog','🌭'),          D('us-burger','Cheeseburger','🍔'),
+      D('us-fries','French Fries','🍟'),      D('us-bbq-ribs','BBQ Ribs','🍖'),
+      D('us-steak','Steak','🥩'),
+      D('us-mac','Mac & Cheese','🧀'),        D('us-wings','Buffalo Wings','🍗'),
+      D('us-apple-pie','Apple Pie','🥧'),     D('us-caesar','Caesar Salad','🥗'),
+      D('us-chowder','Clam Chowder','🍲'),
+      D('us-pancakes','Pancakes','🥞'),       D('us-pulled-pork','Pulled Pork','🍖'),
+      D('us-crab-cakes','Crab Cakes','🦀'),   D('us-cobb','Cobb Salad','🥗'),
+      D('us-lobster-roll','Lobster Roll','🦞'),
+      D('us-wagyu','Wagyu Steak','🥩'),       D('us-surf-turf','Surf & Turf','🦞'),
+      D('us-turkey','Thanksgiving Turkey','🦃'), D('us-cheesecake','Cheesecake','🍰'),
+      D('us-royal-feast','American Royal Feast','🍱')
+    ])},
+  { id: 'ma', flag: '🇲🇦', name: 'Morocco', signature: '🫓', cost: 100,
+    dishes: makeDishes([
+      D('ma-hummus','Hummus','🫘'),           D('ma-pita','Pita Bread','🫓'),
+      D('ma-couscous','Couscous','🍚'),       D('ma-harira','Harira Soup','🍲'),
+      D('ma-lamb-tagine','Lamb Tagine','🥘'),
+      D('ma-briouats','Briouats','🥟'),       D('ma-zaalouk','Zaalouk','🍆'),
+      D('ma-mechoui','Mechoui','🐑'),         D('ma-pastilla','Pastilla','🥧'),
+      D('ma-chicken-tagine','Chicken Tagine','🍗'),
+      D('ma-bissara','Bissara','🫘'),         D('ma-rfissa','Rfissa','🍗'),
+      D('ma-mrouzia','Mrouzia','🍯'),         D('ma-fish-tagine','Fish Tagine','🐟'),
+      D('ma-mechoui-royal','Mechoui Royal','🐑'),
+      D('ma-sellou','Sellou','🍪'),           D('ma-chebakia','Chebakia','🍩'),
+      D('ma-mint-tea','Mint Tea','🍵'),       D('ma-maakouda','Maakouda','🥔'),
+      D('ma-sultan-feast','Sultan Royal Feast','🍱')
+    ])},
+  { id: 'lb', flag: '🇱🇧', name: 'Lebanon', signature: '🧆', cost: 100,
+    dishes: makeDishes([
+      D('lb-hummus','Hummus','🫘'),           D('lb-tabbouleh','Tabbouleh','🥗'),
+      D('lb-falafel','Falafel','🧆'),         D('lb-shawarma','Shawarma','🌯'),
+      D('lb-kibbeh','Kibbeh','🥟'),
+      D('lb-fattoush','Fattoush','🥗'),       D('lb-baba','Baba Ghanoush','🍆'),
+      D('lb-manakish','Manakish','🍞'),       D('lb-kafta','Kafta','🍢'),
+      D('lb-mansaf','Mansaf','🍚'),
+      D('lb-mujaddara','Mujaddara','🍚'),     D('lb-grape-leaves','Stuffed Grape Leaves','🍃'),
+      D('lb-shish','Shish Tawook','🍗'),      D('lb-ouzi','Lamb Ouzi','🍖'),
+      D('lb-sayadieh','Sayadieh','🐟'),
+      D('lb-kibbeh-pumpkin','Kibbeh Pumpkin','🎃'), D('lb-knafeh','Knafeh','🧀'),
+      D('lb-maamoul','Maamoul','🍪'),         D('lb-mhalabieh','Mhalabieh','🍮'),
+      D('lb-royal-feast','Lebanese Royal Feast','🍱')
+    ])},
+  { id: 'et', flag: '🇪🇹', name: 'Ethiopia', signature: '🫓', cost: 100,
+    dishes: makeDishes([
+      D('et-injera','Injera','🫓'),           D('et-misir-wat','Misir Wat','🫘'),
+      D('et-shiro','Shiro','🥣'),             D('et-tibs','Tibs','🍖'),
+      D('et-doro-wat','Doro Wat','🍗'),
+      D('et-kitfo','Kitfo','🥩'),             D('et-atakilt','Atakilt','🥬'),
+      D('et-gomen','Gomen','🥬'),             D('et-yedoro','Yedoro Tibs','🍗'),
+      D('et-beyaynetu','Beyaynetu','🍱'),
+      D('et-sega-wat','Sega Wat','🍖'),       D('et-yebeg','Yebeg Tibs','🐑'),
+      D('et-asa-wat','Asa Wat','🐟'),         D('et-inkulal','Inkulal Firfir','🥚'),
+      D('et-dulet','Dulet','🐂'),
+      D('et-genfo','Genfo','🥣'),             D('et-buna','Buna Coffee','☕'),
+      D('et-tej','Tej','🍯'),                 D('et-kategna','Kategna','🫓'),
+      D('et-imperial','Imperial Ethiopian Feast','🍱')
+    ])}
 ];
 
 /* ============================================================
@@ -1357,13 +1832,16 @@ const COUNTRIES = [
 let state = {
   currentScreen: 'menu',
   currentLevelIdx: 0,
-  currentDishId: null,        // which dish is being played
+  currentDishId: null,
   tray: [],
   collected: {},
   starsEarned: 0,
-  completedDishes: {},        // { 'pho': true, ... }
-  dishProgress: {},           // { 'pho': 3 } = levels completed (next to play = this value)
+  completedDishes: {},
+  dishProgress: {},
   selectedCountryIdx: 0,
+  unlockedCountries: { vn: true }, // Việt Nam unlocked by default
+  unlockedDishes: { pho: true },   // Pho unlocked by default (demo dish)
+  cash: STARTING_CASH,
   busy: false,
   timeLeft: LEVEL_TIME,
   timerInterval: null
@@ -1376,7 +1854,10 @@ function saveProgress() {
   try {
     localStorage.setItem('worldcuisine_progress', JSON.stringify({
       completedDishes: state.completedDishes,
-      dishProgress: state.dishProgress
+      dishProgress: state.dishProgress,
+      cash: state.cash,
+      unlockedCountries: state.unlockedCountries,
+      unlockedDishes: state.unlockedDishes
     }));
   } catch (e) {}
 }
@@ -1385,9 +1866,19 @@ function loadProgress() {
     const data = JSON.parse(localStorage.getItem('worldcuisine_progress') || '{}');
     state.completedDishes = data.completedDishes || {};
     state.dishProgress = data.dishProgress || {};
+    state.cash = (typeof data.cash === 'number') ? data.cash
+                : (typeof data.gold === 'number') ? data.gold
+                : STARTING_CASH;
+    state.unlockedCountries = data.unlockedCountries || { vn: true };
+    state.unlockedDishes = data.unlockedDishes || { pho: true };
+    state.unlockedCountries.vn = true;
+    state.unlockedDishes.pho = true; // Pho always unlocked (demo dish)
   } catch (e) {
     state.completedDishes = {};
     state.dishProgress = {};
+    state.cash = STARTING_CASH;
+    state.unlockedCountries = { vn: true };
+    state.unlockedDishes = { pho: true };
   }
 }
 function resetProgress() {
@@ -1395,8 +1886,24 @@ function resetProgress() {
   localStorage.removeItem('worldcuisine_pho');
   state.completedDishes = {};
   state.dishProgress = {};
+  state.cash = STARTING_CASH;
+  state.unlockedCountries = { vn: true };
+  state.unlockedDishes = { pho: true };
   renderMenu();
+  updateCashDisplay();
   showToast('Tiến độ đã được reset');
+}
+
+function updateCashDisplay() {
+  const el = document.getElementById('cash-amount');
+  if (el) el.textContent = state.cash.toLocaleString();
+}
+
+function addCash(amount, reason) {
+  state.cash += amount;
+  updateCashDisplay();
+  saveProgress();
+  if (reason) showToast(`+${amount} 💵 ${reason}`);
 }
 
 /* ============================================================
@@ -1543,9 +2050,11 @@ function renderCountryStrip() {
   const strip = document.getElementById('country-strip');
   strip.innerHTML = '';
   COUNTRIES.forEach((country, idx) => {
+    const isUnlocked = !!state.unlockedCountries[country.id];
     const chip = document.createElement('div');
     chip.className = 'country-chip';
     if (idx === state.selectedCountryIdx) chip.classList.add('active');
+    if (!isUnlocked) chip.classList.add('locked');
     chip.innerHTML = `
       <div class="country-num">${idx + 1}</div>
       <div class="country-emoji">${country.signature}</div>
@@ -1554,6 +2063,8 @@ function renderCountryStrip() {
     chip.addEventListener('click', () => {
       ensureAudio();
       playTap();
+      // All countries are clickable — locked ones show preview view
+      // (with lock indicator on the header card, which opens unlock popup)
       state.selectedCountryIdx = idx;
       renderMenu();
     });
@@ -1564,50 +2075,99 @@ function renderCountryStrip() {
 function renderCountryHeader() {
   const country = COUNTRIES[state.selectedCountryIdx];
   const header = document.getElementById('country-header');
+  const isUnlocked = !!state.unlockedCountries[country.id];
   const totalDishes = country.dishes.length;
   const completedCount = country.dishes.filter(d => state.completedDishes[d.id]).length;
   const percent = (completedCount / totalDishes) * 100;
-  header.innerHTML = `
-    <div class="ch-title">
-      <span class="ch-flag">${country.flag}</span>
-      <span>Menu — ${country.name}</span>
-    </div>
-    <div class="ch-progress-bar">
-      <div class="ch-progress-fill" style="width: ${percent}%"></div>
-    </div>
-    <div class="ch-progress-text">Hoàn thành ${completedCount}/${totalDishes} món</div>
-  `;
+
+  // Total / earned stars across all 20 dishes of this country
+  const totalStars = country.dishes.reduce((sum, d) => sum + (d.starCount || 0), 0);
+  const earnedStars = country.dishes.reduce((sum, d) => {
+    const prog = state.dishProgress[d.id] || 0;
+    return sum + Math.min(prog, d.starCount || 0);
+  }, 0);
+
+  header.classList.toggle('locked', !isUnlocked);
+
+  if (isUnlocked) {
+    header.innerHTML = `
+      <div class="ch-title">
+        <span class="ch-flag">${country.flag}</span>
+        <span>Menu — ${country.name}</span>
+      </div>
+      <div class="ch-middle">
+        <div class="ch-progress-bar">
+          <div class="ch-progress-fill" style="width: ${percent}%"></div>
+          <div class="ch-stars-info">⭐ ${earnedStars} / ${totalStars}</div>
+        </div>
+      </div>
+      <div class="ch-progress-text">Hoàn thành ${completedCount}/${totalDishes} món</div>
+    `;
+    header.onclick = null;
+  } else {
+    header.innerHTML = `
+      <div class="ch-title">
+        <span class="ch-flag">${country.flag}</span>
+        <span>Menu — ${country.name}</span>
+        <span class="ch-lock-icon">🔒</span>
+      </div>
+      <div class="ch-middle">
+        <div class="ch-locked-msg">Hoàn thành tất cả món ăn của quốc gia trước đó để mở khoá</div>
+      </div>
+      <div class="ch-progress-text">Nhấn để mở khoá ngay</div>
+    `;
+    header.onclick = () => {
+      ensureAudio();
+      playTap();
+      showUnlockPopup(state.selectedCountryIdx);
+    };
+  }
 }
 
 function renderDishGrid() {
   const country = COUNTRIES[state.selectedCountryIdx];
+  const isCountryUnlocked = !!state.unlockedCountries[country.id];
   const grid = document.getElementById('dish-grid');
   grid.innerHTML = '';
-  country.dishes.forEach((dish, idx) => {
+  grid.className = 'dish-grid-5'; // single continuous 2-col grid
+
+  country.dishes.forEach((dish, dishIdx) => {
     const slot = document.createElement('div');
     slot.className = 'dish-slot';
-    if (idx === 4) slot.classList.add('size-wide');
+    // Every 5th dish (positions 5, 10, 15, 20) is the wide boss slot
+    if ((dishIdx + 1) % 5 === 0) slot.classList.add('size-wide');
 
-    const isFirstSlot = (idx === 0);
-    const showLockOverlay = !isFirstSlot && !dish.playable;
     const isCompleted = !!state.completedDishes[dish.id];
-    const progress = state.dishProgress[dish.id] || 0; // levels completed
+    const progress = state.dishProgress[dish.id] || 0;
+
+    // A dish is "available" (no lock overlay) when:
+    // - Country is unlocked AND
+    //   - it's the first dish of the country (preview), OR
+    //   - it's been individually unlocked via ads or completion, OR
+    //   - it's the playable demo dish (Phở has playable: true)
+    const isFirstSlot = (dishIdx === 0);
+    const isDishUnlocked = isCountryUnlocked && (
+      isFirstSlot ||
+      !!state.unlockedDishes[dish.id] ||
+      dish.playable
+    );
+    const showLockOverlay = !isDishUnlocked;
 
     if (showLockOverlay) slot.classList.add('locked');
     if (isCompleted) slot.classList.add('complete');
 
-    // Build stars HTML: starCount stars, first `progress` are lit
+    // Stars based on dish.starCount, lit by progress
     const starCount = dish.starCount || 3;
     const litCount = isCompleted ? starCount : Math.min(progress, starCount);
     let starsHtml = '';
-    for (let i = 0; i < starCount; i++) {
-      starsHtml += `<span class="star${i < litCount ? ' lit' : ''}">⭐</span>`;
+    for (let s = 0; s < starCount; s++) {
+      starsHtml += `<span class="star${s < litCount ? ' lit' : ''}">⭐</span>`;
     }
 
-    // Banner: "DONE" green ribbon if completed, else slot number
+    // Banner: DONE if completed, otherwise the dish number (1-20)
     const bannerContent = isCompleted
       ? '<div class="dish-banner banner-done">DONE</div>'
-      : `<div class="dish-banner">${idx + 1}</div>`;
+      : `<div class="dish-banner">${dishIdx + 1}</div>`;
 
     slot.innerHTML = `
       ${bannerContent}
@@ -1620,6 +2180,20 @@ function renderDishGrid() {
     slot.addEventListener('click', () => {
       ensureAudio();
       playTap();
+
+      // Country locked → trigger country unlock popup (consistent gate)
+      if (!isCountryUnlocked) {
+        showUnlockPopup(state.selectedCountryIdx);
+        return;
+      }
+
+      // Country unlocked but dish locked → dish ads-unlock popup
+      if (!isDishUnlocked) {
+        showDishUnlockPopup(dish);
+        return;
+      }
+
+      // Dish unlocked but not implemented → Coming soon
       if (!dish.playable) {
         slot.classList.remove('shake');
         void slot.offsetWidth;
@@ -1627,14 +2201,13 @@ function renderDishGrid() {
         showToast(`🔒 ${dish.name} sẽ mở khóa sau`);
         return;
       }
-      // Playable: resume from saved progress, or replay if already completed
+
+      // Dish playable → play
       state.currentDishId = dish.id;
       if (isCompleted) {
-        // Replay from level 1
         state.currentLevelIdx = 0;
         state.starsEarned = 0;
       } else {
-        // Resume from where they left off
         state.currentLevelIdx = progress;
         state.starsEarned = progress;
       }
@@ -1646,11 +2219,16 @@ function renderDishGrid() {
 
 // Wire up decorative top-bar buttons (all show toast)
 document.querySelectorAll('#screen-menu .top-pill').forEach(btn => {
+  // Skip cash button — it has its own handler (also decorative for now)
   btn.addEventListener('click', () => {
     ensureAudio();
     playTap();
     const msg = btn.getAttribute('data-toast') || 'Coming soon';
-    showToast(`✨ ${msg} — Coming soon`);
+    if (btn.id === 'cash-btn') {
+      showToast(`💵 ${state.cash.toLocaleString()}`);
+    } else {
+      showToast(`✨ ${msg} — Coming soon`);
+    }
   });
 });
 
@@ -1658,6 +2236,116 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   ensureAudio();
   playTap();
   resetProgress();
+});
+
+/* ============================================================
+   UNLOCK COUNTRY POPUP
+   ============================================================ */
+let unlockTargetIdx = -1;
+
+function showUnlockPopup(countryIdx) {
+  unlockTargetIdx = countryIdx;
+  const country = COUNTRIES[countryIdx];
+  const cost = country.cost;
+  const payBtn = document.getElementById('unlock-pay');
+  const canAfford = state.cash >= cost;
+
+  document.getElementById('unlock-emoji').textContent = country.signature;
+  document.getElementById('unlock-title').textContent = `Mở khóa ${country.name}`;
+  document.getElementById('unlock-text').innerHTML =
+    `Khám phá <strong>20 món ăn</strong> đặc trưng của ${country.flag} ${country.name}.`;
+
+  payBtn.textContent = canAfford
+    ? `💵 Trả ${cost} (bạn có ${state.cash.toLocaleString()})`
+    : `💵 Cần ${cost} (bạn có ${state.cash.toLocaleString()})`;
+  payBtn.disabled = !canAfford;
+  payBtn.style.opacity = canAfford ? '1' : '0.5';
+
+  document.getElementById('unlock-popup').classList.add('show');
+}
+
+function hideUnlockPopup() {
+  document.getElementById('unlock-popup').classList.remove('show');
+  unlockTargetIdx = -1;
+}
+
+function performUnlock(method) {
+  if (unlockTargetIdx < 0) return;
+  const country = COUNTRIES[unlockTargetIdx];
+
+  if (method === 'pay') {
+    if (state.cash < country.cost) {
+      showToast('Không đủ tiền!');
+      return;
+    }
+    state.cash -= country.cost;
+    updateCashDisplay();
+  }
+  // method === 'ads' is free (placeholder for real ads)
+
+  state.unlockedCountries[country.id] = true;
+  state.selectedCountryIdx = unlockTargetIdx;
+  saveProgress();
+  hideUnlockPopup();
+  renderMenu();
+  showToast(`🎉 Đã mở khóa ${country.flag} ${country.name}!`);
+}
+
+document.getElementById('unlock-pay').addEventListener('click', () => {
+  playTap();
+  performUnlock('pay');
+});
+document.getElementById('unlock-ads').addEventListener('click', () => {
+  playTap();
+  performUnlock('ads');
+});
+document.getElementById('unlock-cancel').addEventListener('click', () => {
+  playTap();
+  hideUnlockPopup();
+});
+
+/* ============================================================
+   DISH UNLOCK POPUP (ads-only, "play ahead")
+   Shown when player taps a locked dish inside an unlocked country.
+   ============================================================ */
+let dishUnlockTargetId = null;
+
+function showDishUnlockPopup(dish) {
+  dishUnlockTargetId = dish.id;
+  document.getElementById('dish-unlock-emoji').textContent = dish.emoji;
+  document.getElementById('dish-unlock-title').textContent = `Mở khóa ${dish.name}`;
+  document.getElementById('dish-unlock-text').textContent =
+    `Chơi vượt — xem một quảng cáo ngắn để mở khóa món "${dish.name}" ngay.`;
+  document.getElementById('dish-unlock-popup').classList.add('show');
+}
+
+function hideDishUnlockPopup() {
+  document.getElementById('dish-unlock-popup').classList.remove('show');
+  dishUnlockTargetId = null;
+}
+
+function performDishUnlock() {
+  if (!dishUnlockTargetId) return;
+  state.unlockedDishes[dishUnlockTargetId] = true;
+  // Find dish name for toast
+  let dishName = dishUnlockTargetId;
+  for (const c of COUNTRIES) {
+    const d = c.dishes.find(x => x.id === dishUnlockTargetId);
+    if (d) { dishName = d.name; break; }
+  }
+  saveProgress();
+  hideDishUnlockPopup();
+  renderMenu();
+  showToast(`🎉 Đã mở khóa ${dishName}!`);
+}
+
+document.getElementById('dish-unlock-ads').addEventListener('click', () => {
+  playTap();
+  performDishUnlock();
+});
+document.getElementById('dish-unlock-cancel').addEventListener('click', () => {
+  playTap();
+  hideDishUnlockPopup();
 });
 
 /* ============================================================
@@ -1718,24 +2406,28 @@ function clearTray() {
   slots.forEach(s => {
     s.textContent = '';
     s.classList.remove('has-item', 'matching');
+    s.removeAttribute('data-prep');
   });
 }
 
 /* ----- Item spawning -----
-   Use a grid with jitter to avoid overlap.
-   Play area is ~370px wide x ~520px tall.
+   Random scatter with intentional overlap (10-50% per item) to mimic
+   Match Factory's 3D pile feel in a 2D rendering.
+   Z-index based on Y position: items lower on screen render in front,
+   creating a depth illusion.
 */
 function spawnItems(level) {
   const area = document.getElementById('play-area');
   area.innerHTML = '';
 
-  // Build item pool: 3 of each target + 1-2 of each distractor
+  // Build item pool: target.count of each target (now 9 each)
+  // plus 2-3 of each distractor for clutter/challenge
   const pool = [];
   level.targets.forEach(t => {
     for (let i = 0; i < t.count; i++) pool.push(t.emoji);
   });
   level.distractors.forEach(d => {
-    const n = 1 + Math.floor(Math.random() * 2); // 1 or 2
+    const n = 2 + Math.floor(Math.random() * 2); // 2-3 of each distractor
     for (let i = 0; i < n; i++) pool.push(d);
   });
 
@@ -1745,31 +2437,58 @@ function spawnItems(level) {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
-  // Grid placement: get actual area dims after layout
-  // Defer to next frame to get accurate measurements
+  // Defer to next frame to measure container
   requestAnimationFrame(() => {
     const w = area.clientWidth;
     const h = area.clientHeight;
     const itemSize = 52;
-    const padding = 12;
-    const cols = 5;
-    const rows = Math.max(Math.ceil(pool.length / cols), 4);
-    const cellW = (w - padding * 2) / cols;
-    const cellH = (h - padding * 2) / rows;
+    const padding = 10;
 
+    // Min distance between item centers — controls overlap range.
+    // 25-40px → roughly 10-50% area occlusion (matches user spec).
+    const minDistance = 26;
+
+    const positions = [];
+    pool.forEach(() => {
+      // Try multiple random spots; keep the one farthest from neighbors
+      let bestPos = null;
+      let bestMinDist = -Infinity;
+      const attempts = 25;
+
+      for (let a = 0; a < attempts; a++) {
+        const x = padding + Math.random() * (w - padding * 2 - itemSize);
+        const y = padding + Math.random() * (h - padding * 2 - itemSize);
+
+        let closest = Infinity;
+        for (const p of positions) {
+          const dx = p.x - x;
+          const dy = p.y - y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < closest) closest = d;
+        }
+
+        if (closest >= minDistance) {
+          bestPos = { x, y };
+          break;
+        }
+        if (closest > bestMinDist) {
+          bestMinDist = closest;
+          bestPos = { x, y };
+        }
+      }
+      positions.push(bestPos);
+    });
+
+    // Render items with z-index based on Y (lower in container = on top)
+    // so the pile feels like a real 3D stack
     pool.forEach((emoji, idx) => {
-      const r = Math.floor(idx / cols);
-      const c = idx % cols;
-      const jitterX = (Math.random() - 0.5) * 10;
-      const jitterY = (Math.random() - 0.5) * 10;
-      const x = padding + c * cellW + (cellW - itemSize) / 2 + jitterX;
-      const y = padding + r * cellH + (cellH - itemSize) / 2 + jitterY;
-
+      const pos = positions[idx];
       const el = document.createElement('div');
       el.className = 'item';
       el.textContent = emoji;
-      el.style.left = x + 'px';
-      el.style.top = y + 'px';
+      el.style.left = pos.x + 'px';
+      el.style.top = pos.y + 'px';
+      el.style.zIndex = Math.floor(pos.y); // depth illusion
       el.dataset.emoji = emoji;
       el.addEventListener('click', () => onItemTap(el));
       area.appendChild(el);
@@ -1796,6 +2515,7 @@ function onItemTap(itemEl) {
   const dy = slotRect.top + slotRect.height / 2 - (itemRect.top + itemRect.height / 2);
 
   itemEl.classList.add('flying');
+  itemEl.style.zIndex = '1000'; // override Y-based z-index during flight
   itemEl.style.transform = `translate(${dx}px, ${dy}px) scale(0.7)`;
   itemEl.style.opacity = '0.3';
 
@@ -1803,18 +2523,23 @@ function onItemTap(itemEl) {
 
   setTimeout(() => {
     itemEl.remove();
-    slot.textContent = emoji;
+    slot.innerHTML = `<span class="slot-item">${emoji}</span>`;
     slot.classList.add('has-item');
 
     // COUNT INCREMENT happens IMMEDIATELY on landing (Match Factory style)
     // Match-3 below is only for clearing tray slots, not for counting goals
     if (state.collected.hasOwnProperty(emoji)) {
+      // Apply prep animation for target ingredients only (not distractors)
+      const target = LEVELS[state.currentLevelIdx].targets.find(t => t.emoji === emoji);
+      if (target && target.prep) {
+        slot.dataset.prep = target.prep;
+      }
+
       state.collected[emoji]++;
       updateGoalChip(emoji);
       // Soft chime per item collected
       tone(700, 0.08, 0.12, 'triangle');
       // Bigger chime when a target is fully completed
-      const target = LEVELS[state.currentLevelIdx].targets.find(t => t.emoji === emoji);
       if (target && state.collected[emoji] === target.count) {
         tone(880, 0.15, 0.15, 'triangle', 0.08);
         tone(1175, 0.25, 0.15, 'triangle', 0.18);
@@ -1838,7 +2563,10 @@ function processAfterLanding() {
       if (state.tray[i].emoji === matchEmoji) matchSlots.push(i);
     }
     const slotEls = document.querySelectorAll('#tray .tray-slot');
-    matchSlots.forEach(idx => slotEls[idx].classList.add('matching'));
+    matchSlots.forEach(idx => {
+      slotEls[idx].removeAttribute('data-prep'); // stop prep anim
+      slotEls[idx].classList.add('matching');
+    });
     playMatch();
 
     setTimeout(() => {
@@ -1863,12 +2591,20 @@ function finalizeTurn() {
 
 function redrawTray() {
   const slots = document.querySelectorAll('#tray .tray-slot');
+  const level = LEVELS[state.currentLevelIdx];
   slots.forEach((s, i) => {
     s.classList.remove('matching');
+    s.removeAttribute('data-prep');
     if (state.tray[i]) {
-      s.textContent = state.tray[i].emoji;
+      const emoji = state.tray[i].emoji;
+      s.innerHTML = `<span class="slot-item">${emoji}</span>`;
       s.classList.add('has-item');
       state.tray[i].slotIdx = i;
+      // Re-apply prep animation if this is a target ingredient
+      const target = level.targets.find(t => t.emoji === emoji);
+      if (target && target.prep) {
+        s.dataset.prep = target.prep;
+      }
     } else {
       s.textContent = '';
       s.classList.remove('has-item');
@@ -1897,6 +2633,8 @@ function onLevelWin() {
     );
     saveProgress();
   }
+  // Reward cash per level passed
+  addCash(LEVEL_WIN_REWARD);
   // Show level complete popup
   setTimeout(() => {
     showCompletePopup();
@@ -2284,13 +3022,24 @@ function showReveal3() {
   setTimeout(() => {
     const dishId = state.currentDishId || 'pho';
     state.completedDishes[dishId] = true;
-    // Find the dish to get max stars
+    // Find the dish to get max stars + auto-unlock next sequential dish
     let maxStars = 7;
-    COUNTRIES.forEach(c => c.dishes.forEach(d => {
-      if (d.id === dishId) maxStars = d.starCount;
-    }));
+    for (const c of COUNTRIES) {
+      const idx = c.dishes.findIndex(d => d.id === dishId);
+      if (idx >= 0) {
+        maxStars = c.dishes[idx].starCount;
+        // Auto-unlock the NEXT dish in the same country (sequential progression)
+        if (idx < c.dishes.length - 1) {
+          const nextDish = c.dishes[idx + 1];
+          state.unlockedDishes[nextDish.id] = true;
+        }
+        break;
+      }
+    }
     state.dishProgress[dishId] = maxStars;
     saveProgress();
+    // Big cash reward for completing a dish
+    addCash(DISH_COMPLETE_REWARD, 'Hoàn thành món!');
     renderMenu();
     document.getElementById('reveal3-continue').classList.add('show');
     state.busy = false;
@@ -2310,6 +3059,7 @@ document.getElementById('reveal3-continue').addEventListener('click', () => {
    ============================================================ */
 loadProgress();
 renderMenu();
+updateCashDisplay();
 
 /* ============================================================
    FULLSCREEN HANDLING
@@ -2339,6 +3089,7 @@ function tryRequestFullscreen() {
 
 function showFullscreenHint() {
   if (isStandalone) return; // already fullscreen
+  if (isEmbedded) return; // running inside Claude artifact or other iframe
   if (!isMobileBrowser) return; // desktop doesn't need this
   if (localStorage.getItem(HINT_DISMISSED_KEY) === '1') return;
 
@@ -2386,10 +3137,14 @@ document.getElementById('fs-dismiss').addEventListener('click', () => {
 setTimeout(showFullscreenHint, 600);
 
 // On Android, also attempt fullscreen on any first user interaction
-// (Fullscreen API requires user gesture)
+// (Fullscreen API requires user gesture). Skip for iOS, standalone apps,
+// and embedded contexts (Claude artifacts, etc.) where it can cause side
+// effects or trigger parent UI behaviors.
+const isEmbedded = (window.self !== window.top);
 let fsAttempted = false;
 function attemptFsOnFirstTap() {
-  if (fsAttempted || isIOS || isStandalone) return;
+  if (fsAttempted || isIOS || isStandalone || isEmbedded) return;
+  if (!isMobileBrowser) return; // only on real mobile browsers
   fsAttempted = true;
   tryRequestFullscreen();
 }
