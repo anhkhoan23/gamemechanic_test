@@ -146,6 +146,7 @@ html, body {
   flex-shrink: 0;
 }
 .top-pill {
+  position: relative;
   background: linear-gradient(180deg, #fdf5e0 0%, #f3deaa 100%);
   border: 1.5px solid #c89a4c;
   border-radius: 14px;
@@ -223,17 +224,6 @@ html, body {
   top: 2px;
   right: 6px;
   font-size: 14px;
-}
-.country-chip.locked .country-cost {
-  display: block;
-}
-.country-chip .country-cost {
-  display: none;
-  font-size: 9px;
-  font-weight: 700;
-  color: #b8861f;
-  margin-top: -1px;
-  letter-spacing: 0;
 }
 .country-chip .country-num {
   font-size: 11px;
@@ -363,9 +353,6 @@ html, body {
   font-size: 18px;
   margin-left: 6px;
 }
-.country-header .ch-progress-bar.locked-bar {
-  background: rgba(74, 40, 16, 0.4);
-}
 
 /* Dish grid: 2x2 + 1 wide */
 .dish-grid-5 {
@@ -376,34 +363,6 @@ html, body {
   margin-bottom: 16px;
 }
 
-/* Cluster wrapper (4 clusters per country) */
-.cluster {
-  margin-bottom: 16px;
-}
-.cluster-header {
-  padding: 6px 18px 6px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 800;
-  color: #8b2e2e;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-}
-.cluster-header::before,
-.cluster-header::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139, 46, 46, 0.3), transparent);
-}
-.cluster-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 0 12px;
-}
 .dish-slot {
   position: relative;
   border-radius: 16px;
@@ -1023,6 +982,439 @@ html, body {
 .popup-btn:active { transform: scale(0.97); }
 
 /* ============================================================
+   SHOP SCREEN (full-screen, replaces old popup)
+   ============================================================ */
+#screen-shop {
+  background: linear-gradient(180deg, #f5e6c8 0%, #e8d4a4 100%);
+  display: none;
+  flex-direction: column;
+  padding: 50px 16px 30px;
+}
+#screen-shop.active {
+  display: flex;
+}
+.shop-screen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+.shop-screen-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #5a2020;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+.shop-close-x {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #d94545 0%, #b02828 100%);
+  color: white;
+  border: 2px solid #8b1d1d;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(139, 29, 29, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  flex-shrink: 0;
+  padding: 0;
+  line-height: 1;
+}
+.shop-close-x:active {
+  transform: scale(0.92);
+}
+.shop-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  padding-bottom: 12px;
+}
+
+/* Section titles between groups of items */
+.shop-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #8a6d4a;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 8px 6px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(184, 134, 31, 0.3);
+}
+.shop-section-title:first-child {
+  margin-top: 0;
+}
+
+/* ----- Feature row (Remove Ads, Premium Pack, Battle Pass) ----- */
+.shop-feature {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(180deg, #fff8e1 0%, #fce8a8 100%);
+  border: 2px solid var(--accent, #d4a039);
+  border-radius: 14px;
+  padding: 10px 12px;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 100ms ease;
+}
+.shop-feature:active { transform: scale(0.98); }
+.feature-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.feature-info {
+  flex: 1;
+  min-width: 0;
+}
+.feature-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #5a2020;
+  letter-spacing: 0.2px;
+}
+.feature-desc {
+  font-size: 11px;
+  color: #6a4d2a;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+.feature-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(180deg, #2d8a4f 0%, #1d6837 100%);
+  padding: 9px 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+
+/* ----- Bundle card (Pro, Master, Mega, Ultra, Giant, Legendary) ----- */
+.shop-bundle {
+  position: relative;
+  background: linear-gradient(180deg, #cae9ff 0%, #91d2ff 100%);
+  border: 3px solid #4a8acc;
+  border-radius: 16px;
+  padding: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 100ms ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.shop-bundle:active { transform: scale(0.98); }
+.shop-bundle.popular {
+  background: linear-gradient(180deg, #ffe0d0 0%, #ffa980 100%);
+  border-color: #c8632d;
+}
+.shop-bundle.best {
+  background: linear-gradient(180deg, #fff0a3 0%, #ffd968 100%);
+  border-color: #c89020;
+  box-shadow: 0 0 16px rgba(200, 144, 32, 0.4);
+}
+.bundle-badge {
+  position: absolute;
+  top: 8px;
+  left: -2px;
+  background: #c8632d;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 3px 10px 3px 8px;
+  letter-spacing: 0.6px;
+  border-radius: 0 6px 6px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  z-index: 2;
+}
+.bundle-badge.best { background: #8b2e2e; }
+
+/* Top row: chest + gold on left, items grid on right */
+.bundle-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bundle-chest-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 60px;
+  padding: 4px 0;
+}
+.bundle-chest {
+  font-size: 36px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
+}
+.bundle-gold {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #2e1a08;
+  margin-top: 4px;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+.bundle-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  flex: 1;
+  background: rgba(255,255,255,0.45);
+  padding: 7px;
+  border-radius: 10px;
+  align-items: center;
+  align-content: center;
+  min-height: 50px;
+}
+.bundle-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255,255,255,0.75);
+  padding: 4px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.bundle-item-emoji {
+  font-size: 15px;
+  line-height: 1;
+}
+.bundle-item-count {
+  font-size: 12px;
+  font-weight: 800;
+  color: #2e1a08;
+}
+.bundle-extras {
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.45);
+  padding: 7px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+}
+.bundle-extra-heart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.75);
+  padding: 4px 6px;
+  border-radius: 6px;
+  gap: 0;
+}
+.bundle-extra-heart .bundle-item-emoji { font-size: 18px; }
+.bundle-extra-heart .bundle-item-count { font-size: 10px; margin-top: -2px; }
+
+/* Bottom row: name on left, price button on right */
+.bundle-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bundle-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2e1a08;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+  letter-spacing: 0.2px;
+}
+.bundle-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(180deg, #2d8a4f 0%, #1d6837 100%);
+  padding: 10px 14px;
+  border-radius: 10px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* ----- Pure gold pack row (minimal) ----- */
+.shop-pack {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  background: linear-gradient(180deg, #fff8e1 0%, #fce8a8 100%);
+  border: 2px solid #d4a039;
+  border-radius: 12px;
+  padding: 10px 14px;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 100ms ease;
+}
+.shop-pack:active { transform: scale(0.98); }
+.pack-amount {
+  font-size: 18px;
+  font-weight: 800;
+  color: #5a2020;
+  letter-spacing: 0.3px;
+}
+.pack-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(180deg, #2d8a4f 0%, #1d6837 100%);
+  padding: 9px 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+
+/* ----- Free ads reward card (Miễn phí section) ----- */
+.shop-ads-reward {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(180deg, #e8f5d6 0%, #c4e090 100%);
+  border: 2px solid #4a8d2d;
+  border-radius: 14px;
+  padding: 12px;
+  gap: 12px;
+}
+.ads-icon {
+  width: 44px;
+  height: 44px;
+  background: #4a8d2d;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+.ads-info {
+  flex: 1;
+  min-width: 0;
+}
+.ads-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #2e1a08;
+}
+.ads-subtitle {
+  font-size: 11px;
+  color: #4a4010;
+  margin-top: 2px;
+  font-weight: 600;
+}
+.ads-watch-btn {
+  position: relative;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(180deg, #2d8a4f 0%, #1d6837 100%);
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  flex-shrink: 0;
+  min-width: 90px;
+  font-family: inherit;
+  letter-spacing: 0.2px;
+}
+.ads-watch-btn:active:not(:disabled) { transform: scale(0.96); }
+.ads-watch-btn.cooldown {
+  background: linear-gradient(180deg, #9aa090 0%, #6a7060 100%);
+  cursor: default;
+  opacity: 0.95;
+}
+.ads-watch-btn.exhausted {
+  background: linear-gradient(180deg, #b08070 0%, #804030 100%);
+  cursor: default;
+  opacity: 0.9;
+}
+
+/* ----- Notification dot (cart icon, ads button) ----- */
+.notif-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 11px;
+  height: 11px;
+  background: #d94545;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+  animation: notifPulse 1.4s ease-in-out infinite;
+  z-index: 5;
+  pointer-events: none;
+}
+@keyframes notifPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.2); opacity: 0.85; }
+}
+
+/* ============================================================
+   GOLD COIN (CSS-rendered for consistent yellow on all platforms)
+   ============================================================ */
+.coin {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff4a3 0%, #f5c842 45%, #c89020 100%);
+  border: 1px solid #8b6020;
+  box-shadow: inset 0 -1px 1px rgba(139,96,32,0.5);
+  flex-shrink: 0;
+  position: relative;
+}
+.coin.coin-lg {
+  width: 44px;
+  height: 44px;
+  border-width: 2px;
+  box-shadow: inset 0 -2px 4px rgba(139,96,32,0.5), 0 1px 3px rgba(0,0,0,0.15);
+}
+.coin.coin-lg::before {
+  content: '';
+  position: absolute;
+  inset: 18%;
+  border: 1.5px solid rgba(139,96,32,0.5);
+  border-radius: 50%;
+}
+.coin.coin-md {
+  width: 28px;
+  height: 28px;
+  border-width: 1.5px;
+  box-shadow: inset 0 -1px 2px rgba(139,96,32,0.5), 0 1px 2px rgba(0,0,0,0.1);
+}
+.coin.coin-md::before {
+  content: '';
+  position: absolute;
+  inset: 20%;
+  border: 1px solid rgba(139,96,32,0.4);
+  border-radius: 50%;
+}
+
+/* ============================================================
    REVEAL SCREENS
    ============================================================ */
 .reveal-screen {
@@ -1222,11 +1614,12 @@ html, body {
         <button class="top-pill resource" data-toast="Tim sống">
           <span class="icon">❤️</span><span>Full</span>
         </button>
-        <button class="top-pill resource" id="cash-btn" data-toast="Tiền">
-          <span class="icon">💵</span><span id="cash-amount">1000</span>
+        <button class="top-pill resource" id="gold-btn" data-toast="Vàng">
+          <span class="coin"></span><span id="gold-amount">1000</span>
         </button>
-        <button class="top-pill icon-only" data-toast="Cửa hàng">
+        <button class="top-pill icon-only" id="shop-btn" data-toast="Cửa hàng">
           <span class="icon">🛒</span>
+          <span class="notif-dot" id="cart-notif-dot" style="display:none;"></span>
         </button>
       </div>
 
@@ -1254,7 +1647,7 @@ html, body {
           <div class="popup-emoji" id="unlock-emoji">🔓</div>
           <div class="popup-title" id="unlock-title">Mở khóa nền ẩm thực</div>
           <div class="popup-text" id="unlock-text">Khám phá 20 món ăn đặc trưng của quốc gia này.</div>
-          <button class="popup-btn primary" id="unlock-pay">💵 Trả 100</button>
+          <button class="popup-btn primary" id="unlock-pay"><span class="coin"></span> Trả 100</button>
           <button class="popup-btn primary" id="unlock-ads" style="background:#2d8a4f;">📺 Xem ads (miễn phí)</button>
           <button class="popup-btn secondary" id="unlock-cancel">Để sau</button>
         </div>
@@ -1270,6 +1663,15 @@ html, body {
           <button class="popup-btn secondary" id="dish-unlock-cancel">Để sau</button>
         </div>
       </div>
+    </div>
+
+    <!-- ========== SHOP SCREEN ========== -->
+    <div id="screen-shop" class="screen">
+      <div class="shop-screen-header">
+        <h1 class="shop-screen-title">🛒 Cửa hàng</h1>
+        <button class="shop-close-x" id="shop-close-x" aria-label="Đóng">✕</button>
+      </div>
+      <div class="shop-rows" id="shop-rows"></div>
     </div>
 
     <!-- ========== GAMEPLAY SCREEN ========== -->
@@ -1495,17 +1897,17 @@ const LEVELS = [
 const REVEAL_AFTER = { 3: 1, 6: 2, 7: 3 };
 const LEVEL_TIME = 60;
 const ADS_BONUS_TIME = 20;
-const STARTING_CASH = 1000;
+const STARTING_GOLD = 1000;
 const COUNTRY_UNLOCK_COST = 100;
-const LEVEL_WIN_REWARD = 10;     // cash per level passed
-const DISH_COMPLETE_REWARD = 50; // cash per dish fully completed
+const LEVEL_WIN_REWARD = 10;     // gold per level passed
+const DISH_COMPLETE_REWARD = 50; // gold per dish fully completed
 
 /* ============================================================
    DISH ROSTER — 20 countries × 20 dishes (400 dishes total)
    Each country has 4 clusters of 5 dishes (positions 1-5 of each cluster)
    Star pattern per cluster: 3-4, 4-5, 5-6, 6, 7
    Only "pho" is playable (Việt Nam, dish #5 = boss of cluster 1)
-   Costs: Việt Nam = 0 (free), others = 100 cash to unlock
+   Costs: Việt Nam = 0 (free), others = 100 gold to unlock
    ============================================================ */
 
 // Star pattern applied to every country's 20 dishes (positions 1-20)
@@ -1830,7 +2232,7 @@ const COUNTRIES = [
    STATE
    ============================================================ */
 let state = {
-  currentScreen: 'menu',
+  currentScreen: 'screen-menu',
   currentLevelIdx: 0,
   currentDishId: null,
   tray: [],
@@ -1841,7 +2243,8 @@ let state = {
   selectedCountryIdx: 0,
   unlockedCountries: { vn: true }, // Việt Nam unlocked by default
   unlockedDishes: { pho: true },   // Pho unlocked by default (demo dish)
-  cash: STARTING_CASH,
+  gold: STARTING_GOLD,
+  adsReward: { lastWatched: 0, todayCount: 0, todayDate: '' },
   busy: false,
   timeLeft: LEVEL_TIME,
   timerInterval: null
@@ -1855,9 +2258,10 @@ function saveProgress() {
     localStorage.setItem('worldcuisine_progress', JSON.stringify({
       completedDishes: state.completedDishes,
       dishProgress: state.dishProgress,
-      cash: state.cash,
+      gold: state.gold,
       unlockedCountries: state.unlockedCountries,
-      unlockedDishes: state.unlockedDishes
+      unlockedDishes: state.unlockedDishes,
+      adsReward: state.adsReward
     }));
   } catch (e) {}
 }
@@ -1866,19 +2270,21 @@ function loadProgress() {
     const data = JSON.parse(localStorage.getItem('worldcuisine_progress') || '{}');
     state.completedDishes = data.completedDishes || {};
     state.dishProgress = data.dishProgress || {};
-    state.cash = (typeof data.cash === 'number') ? data.cash
-                : (typeof data.gold === 'number') ? data.gold
-                : STARTING_CASH;
+    state.gold = (typeof data.gold === 'number') ? data.gold
+                : (typeof data.cash === 'number') ? data.cash
+                : STARTING_GOLD;
     state.unlockedCountries = data.unlockedCountries || { vn: true };
     state.unlockedDishes = data.unlockedDishes || { pho: true };
+    state.adsReward = data.adsReward || { lastWatched: 0, todayCount: 0, todayDate: '' };
     state.unlockedCountries.vn = true;
     state.unlockedDishes.pho = true; // Pho always unlocked (demo dish)
   } catch (e) {
     state.completedDishes = {};
     state.dishProgress = {};
-    state.cash = STARTING_CASH;
+    state.gold = STARTING_GOLD;
     state.unlockedCountries = { vn: true };
     state.unlockedDishes = { pho: true };
+    state.adsReward = { lastWatched: 0, todayCount: 0, todayDate: '' };
   }
 }
 function resetProgress() {
@@ -1886,24 +2292,26 @@ function resetProgress() {
   localStorage.removeItem('worldcuisine_pho');
   state.completedDishes = {};
   state.dishProgress = {};
-  state.cash = STARTING_CASH;
+  state.gold = STARTING_GOLD;
   state.unlockedCountries = { vn: true };
   state.unlockedDishes = { pho: true };
+  state.adsReward = { lastWatched: 0, todayCount: 0, todayDate: '' };
   renderMenu();
-  updateCashDisplay();
+  updateGoldDisplay();
+  updateCartNotifDot();
   showToast('Tiến độ đã được reset');
 }
 
-function updateCashDisplay() {
-  const el = document.getElementById('cash-amount');
-  if (el) el.textContent = state.cash.toLocaleString();
+function updateGoldDisplay() {
+  const el = document.getElementById('gold-amount');
+  if (el) el.textContent = state.gold.toLocaleString();
 }
 
-function addCash(amount, reason) {
-  state.cash += amount;
-  updateCashDisplay();
+function addGold(amount, reason) {
+  state.gold += amount;
+  updateGoldDisplay();
   saveProgress();
-  if (reason) showToast(`+${amount} 💵 ${reason}`);
+  if (reason) showToast(`+${amount} <span class="coin"></span> ${reason}`);
 }
 
 /* ============================================================
@@ -2029,12 +2437,12 @@ function showScreen(id) {
   state.currentScreen = id;
 }
 
+const toastEl = document.getElementById('toast');
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+  toastEl.innerHTML = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastEl._timer);
+  toastEl._timer = setTimeout(() => toastEl.classList.remove('show'), 1800);
 }
 
 /* ============================================================
@@ -2044,6 +2452,7 @@ function renderMenu() {
   renderCountryStrip();
   renderCountryHeader();
   renderDishGrid();
+  updateCartNotifDot();
 }
 
 function renderCountryStrip() {
@@ -2217,15 +2626,16 @@ function renderDishGrid() {
   });
 }
 
-// Wire up decorative top-bar buttons (all show toast)
+// Wire up decorative top-bar buttons (all show toast except those with own handlers)
 document.querySelectorAll('#screen-menu .top-pill').forEach(btn => {
-  // Skip cash button — it has its own handler (also decorative for now)
+  // Skip buttons that have their own handlers
+  if (btn.id === 'shop-btn') return;
   btn.addEventListener('click', () => {
     ensureAudio();
     playTap();
     const msg = btn.getAttribute('data-toast') || 'Coming soon';
-    if (btn.id === 'cash-btn') {
-      showToast(`💵 ${state.cash.toLocaleString()}`);
+    if (btn.id === 'gold-btn') {
+      showToast(`<span class="coin"></span> ${state.gold.toLocaleString()}`);
     } else {
       showToast(`✨ ${msg} — Coming soon`);
     }
@@ -2248,16 +2658,16 @@ function showUnlockPopup(countryIdx) {
   const country = COUNTRIES[countryIdx];
   const cost = country.cost;
   const payBtn = document.getElementById('unlock-pay');
-  const canAfford = state.cash >= cost;
+  const canAfford = state.gold >= cost;
 
   document.getElementById('unlock-emoji').textContent = country.signature;
   document.getElementById('unlock-title').textContent = `Mở khóa ${country.name}`;
   document.getElementById('unlock-text').innerHTML =
     `Khám phá <strong>20 món ăn</strong> đặc trưng của ${country.flag} ${country.name}.`;
 
-  payBtn.textContent = canAfford
-    ? `💵 Trả ${cost} (bạn có ${state.cash.toLocaleString()})`
-    : `💵 Cần ${cost} (bạn có ${state.cash.toLocaleString()})`;
+  payBtn.innerHTML = canAfford
+    ? `<span class="coin"></span> Trả ${cost} (bạn có ${state.gold.toLocaleString()})`
+    : `<span class="coin"></span> Cần ${cost} (bạn có ${state.gold.toLocaleString()})`;
   payBtn.disabled = !canAfford;
   payBtn.style.opacity = canAfford ? '1' : '0.5';
 
@@ -2274,12 +2684,12 @@ function performUnlock(method) {
   const country = COUNTRIES[unlockTargetIdx];
 
   if (method === 'pay') {
-    if (state.cash < country.cost) {
-      showToast('Không đủ tiền!');
+    if (state.gold < country.cost) {
+      showToast('Không đủ vàng!');
       return;
     }
-    state.cash -= country.cost;
-    updateCashDisplay();
+    state.gold -= country.cost;
+    updateGoldDisplay();
   }
   // method === 'ads' is free (placeholder for real ads)
 
@@ -2346,6 +2756,439 @@ document.getElementById('dish-unlock-ads').addEventListener('click', () => {
 document.getElementById('dish-unlock-cancel').addEventListener('click', () => {
   playTap();
   hideDishUnlockPopup();
+});
+
+/* ============================================================
+   SHOP SCREEN — multi-section storefront with:
+   1. Premium features (Remove Ads, Premium Pack, Battle Pass)
+   2. Bundle deals (Pro → Legendary, gold + power-up items)
+   3. Pure gold packs (100 → 10000)
+
+   Prototype: tapping any item instantly grants the reward (no real payment).
+   Power-up items in bundles are visual-only for now (no in-game effect).
+   ============================================================ */
+
+const POWERUPS = {
+  hourglass: { emoji: '⏳', label: 'Thêm giờ' },
+  freeze:    { emoji: '❄️', label: 'Đóng băng' },
+  hint:      { emoji: '🔍', label: 'Gợi ý' },
+  rocket:    { emoji: '🚀', label: 'Boost' }
+};
+
+const SHOP_FEATURES = [
+  {
+    id: 'remove-ads',
+    name: 'Remove Ads',
+    description: 'Tắt vĩnh viễn tất cả ads',
+    price: 149000,
+    emoji: '🚫',
+    accent: '#7a3aa8'
+  },
+  {
+    id: 'premium-pack',
+    name: 'Premium Pack',
+    description: 'Tắt ads + Mở khoá tất cả màn chơi',
+    price: 299000,
+    emoji: '👑',
+    accent: '#c89020'
+  },
+  {
+    id: 'battle-pass',
+    name: 'Battle Pass',
+    description: 'Phần thưởng mùa hiện tại',
+    price: 299000,
+    emoji: '🎖️',
+    accent: '#c8632d'
+  }
+];
+
+const SHOP_BUNDLES = [
+  {
+    id: 'pro-bundle',
+    name: 'Pro Bundle',
+    gold: 250,
+    chest: '🎁',
+    items: [{ key: 'hourglass', count: 1 }, { key: 'rocket', count: 1 }],
+    price: 199000
+  },
+  {
+    id: 'master-bundle',
+    name: 'Master Bundle',
+    gold: 500,
+    chest: '📦',
+    items: [
+      { key: 'hourglass', count: 1 }, { key: 'freeze', count: 1 },
+      { key: 'hint', count: 1 }, { key: 'rocket', count: 1 }
+    ],
+    price: 299000
+  },
+  {
+    id: 'mega-bundle',
+    name: 'Mega Bundle',
+    gold: 1000,
+    chest: '💼',
+    items: [
+      { key: 'hourglass', count: 2 }, { key: 'freeze', count: 2 },
+      { key: 'hint', count: 2 }, { key: 'rocket', count: 2 }
+    ],
+    price: 599000,
+    badge: 'PHỔ BIẾN', tier: 'popular'
+  },
+  {
+    id: 'ultra-bundle',
+    name: 'Ultra Bundle',
+    gold: 2500,
+    chest: '🏆',
+    items: [
+      { key: 'hourglass', count: 6 }, { key: 'freeze', count: 6 },
+      { key: 'hint', count: 6 }, { key: 'rocket', count: 6 }
+    ],
+    extras: { hearts: '6h' },
+    price: 1199000
+  },
+  {
+    id: 'giant-bundle',
+    name: 'Giant Bundle',
+    gold: 5000,
+    chest: '💎',
+    items: [
+      { key: 'hourglass', count: 12 }, { key: 'freeze', count: 12 },
+      { key: 'hint', count: 12 }, { key: 'rocket', count: 12 }
+    ],
+    extras: { hearts: '12h' },
+    price: 2499000
+  },
+  {
+    id: 'legendary-bundle',
+    name: 'Legendary Bundle',
+    gold: 6500,
+    chest: '🔱',
+    items: [
+      { key: 'hourglass', count: 24 }, { key: 'freeze', count: 24 },
+      { key: 'hint', count: 24 }, { key: 'rocket', count: 24 }
+    ],
+    extras: { hearts: '24h' },
+    price: 2999000,
+    badge: 'TỐT NHẤT', tier: 'best'
+  }
+];
+
+const SHOP_PACKS = [
+  { gold: 100,   price: 59000 },
+  { gold: 500,   price: 299000 },
+  { gold: 1000,  price: 399000 },
+  { gold: 2500,  price: 899000 },
+  { gold: 5000,  price: 1799000 },
+  { gold: 10000, price: 2999000 }
+];
+
+function formatVND(n) {
+  return n.toLocaleString('vi-VN') + 'đ';
+}
+
+function makeSectionTitle(text) {
+  const h = document.createElement('div');
+  h.className = 'shop-section-title';
+  h.textContent = text;
+  return h;
+}
+
+function makeFeatureRow(feature) {
+  const row = document.createElement('div');
+  row.className = 'shop-feature';
+  row.style.setProperty('--accent', feature.accent);
+  row.innerHTML = `
+    <div class="feature-icon" style="background:${feature.accent};">${feature.emoji}</div>
+    <div class="feature-info">
+      <div class="feature-name">${feature.name}</div>
+      <div class="feature-desc">${feature.description}</div>
+    </div>
+    <div class="feature-price">${formatVND(feature.price)}</div>
+  `;
+  row.addEventListener('click', () => {
+    ensureAudio();
+    playTap();
+    buyFeature(feature);
+  });
+  return row;
+}
+
+function makeBundleCard(bundle) {
+  const card = document.createElement('div');
+  card.className = 'shop-bundle' + (bundle.tier ? ' ' + bundle.tier : '');
+  const badgeHtml = bundle.badge
+    ? `<div class="bundle-badge${bundle.tier === 'best' ? ' best' : ''}">${bundle.badge}</div>`
+    : '';
+  const itemsHtml = bundle.items.map(it => `
+    <div class="bundle-item">
+      <span class="bundle-item-emoji">${POWERUPS[it.key].emoji}</span>
+      <span class="bundle-item-count">×${it.count}</span>
+    </div>
+  `).join('');
+  const extrasHtml = bundle.extras && bundle.extras.hearts
+    ? `<div class="bundle-extras">
+         <div class="bundle-extra-heart">
+           <span class="bundle-item-emoji">❤️</span>
+           <span class="bundle-item-count">∞ ${bundle.extras.hearts}</span>
+         </div>
+       </div>`
+    : '';
+  card.innerHTML = `
+    ${badgeHtml}
+    <div class="bundle-top">
+      <div class="bundle-chest-area">
+        <div class="bundle-chest">${bundle.chest}</div>
+        <div class="bundle-gold">
+          <span class="coin"></span>${bundle.gold.toLocaleString()}
+        </div>
+      </div>
+      <div class="bundle-items">${itemsHtml}</div>
+      ${extrasHtml}
+    </div>
+    <div class="bundle-bottom">
+      <div class="bundle-name">${bundle.name}</div>
+      <div class="bundle-price">${formatVND(bundle.price)}</div>
+    </div>
+  `;
+  card.addEventListener('click', () => {
+    ensureAudio();
+    playTap();
+    buyBundle(bundle);
+  });
+  return card;
+}
+
+function makePackRow(pack) {
+  const row = document.createElement('div');
+  row.className = 'shop-pack';
+  row.innerHTML = `
+    <div class="coin coin-md"></div>
+    <div class="pack-amount">${pack.gold.toLocaleString()}</div>
+    <div class="pack-price">${formatVND(pack.price)}</div>
+  `;
+  row.addEventListener('click', () => {
+    ensureAudio();
+    playTap();
+    buyPack(pack);
+  });
+  return row;
+}
+
+function renderShopScreen() {
+  const container = document.getElementById('shop-rows');
+  container.innerHTML = '';
+
+  // Section 1: Premium features
+  container.appendChild(makeSectionTitle('Đặc biệt'));
+  SHOP_FEATURES.forEach(f => container.appendChild(makeFeatureRow(f)));
+
+  // Section 2: Bundle deals
+  container.appendChild(makeSectionTitle('Gói khuyến mãi'));
+  SHOP_BUNDLES.forEach(b => container.appendChild(makeBundleCard(b)));
+
+  // Section 3: Plain gold packs
+  container.appendChild(makeSectionTitle('Mua vàng'));
+  SHOP_PACKS.forEach(p => container.appendChild(makePackRow(p)));
+
+  // Section 4: Free section (watch ads for gold reward)
+  container.appendChild(makeSectionTitle('Miễn phí'));
+  container.appendChild(makeAdsRewardCard());
+
+  // Apply current state to ads button
+  updateAdsBtnDisplay();
+}
+
+function showShopScreen() {
+  showScreen('screen-shop');
+  renderShopScreen();
+  // If cooldown is active, start updating the timer text every second
+  if (getAdsRewardStatus().state === 'cooldown') {
+    startAdsCountdownInterval();
+  }
+}
+
+function hideShopScreen() {
+  showScreen('screen-menu');
+  stopAdsCountdownInterval();
+  renderMenu();
+}
+
+function buyPack(pack) {
+  addGold(pack.gold, `Đã mua ${pack.gold.toLocaleString()} vàng (${formatVND(pack.price)})`);
+}
+
+function buyBundle(bundle) {
+  addGold(bundle.gold, `${bundle.name} — +${bundle.gold.toLocaleString()} vàng + power-ups`);
+}
+
+function buyFeature(feature) {
+  // Prototype: just confirm with toast (no persistent ownership tracking yet)
+  showToast(`✨ Đã mua ${feature.name} (${formatVND(feature.price)})`);
+}
+
+/* ============================================================
+   FREE ADS REWARD — watch ad for +50 gold
+   2 minute cooldown between watches, max 10 per day
+   ============================================================ */
+const ADS_REWARD_GOLD = 50;
+const ADS_REWARD_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
+const ADS_REWARD_DAILY_LIMIT = 10;
+
+function getTodayKey() {
+  return new Date().toDateString(); // e.g. "Mon Jun 15 2026"
+}
+
+function ensureAdsRewardDay() {
+  const today = getTodayKey();
+  if (state.adsReward.todayDate !== today) {
+    state.adsReward.todayDate = today;
+    state.adsReward.todayCount = 0;
+  }
+}
+
+function getAdsRewardStatus() {
+  ensureAdsRewardDay();
+  const count = state.adsReward.todayCount;
+  const limit = ADS_REWARD_DAILY_LIMIT;
+  if (count >= limit) {
+    return { state: 'exhausted', count, limit };
+  }
+  const elapsed = Date.now() - state.adsReward.lastWatched;
+  if (elapsed >= ADS_REWARD_COOLDOWN_MS) {
+    return { state: 'ready', count, limit };
+  }
+  return {
+    state: 'cooldown',
+    count, limit,
+    remainingMs: ADS_REWARD_COOLDOWN_MS - elapsed
+  };
+}
+
+function isAdsRewardAvailable() {
+  return getAdsRewardStatus().state === 'ready';
+}
+
+function updateCartNotifDot() {
+  const dot = document.getElementById('cart-notif-dot');
+  if (!dot) return;
+  dot.style.display = isAdsRewardAvailable() ? 'block' : 'none';
+}
+
+function updateAdsBtnDisplay() {
+  const btn = document.getElementById('ads-watch-btn');
+  if (!btn) return; // not on shop screen
+  const text = document.getElementById('ads-watch-text');
+  const dot = btn.querySelector('.notif-dot');
+  const subtitle = document.getElementById('ads-count-display');
+  const status = getAdsRewardStatus();
+
+  if (subtitle) {
+    subtitle.textContent = `+${ADS_REWARD_GOLD} vàng · ${status.count}/${status.limit} hôm nay`;
+  }
+
+  btn.classList.remove('cooldown', 'exhausted');
+  if (status.state === 'ready') {
+    if (text) text.textContent = '▶ Xem';
+    btn.disabled = false;
+    if (dot) dot.style.display = 'block';
+  } else if (status.state === 'cooldown') {
+    const total = Math.ceil(status.remainingMs / 1000);
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    if (text) text.textContent = `⏱ ${m}:${String(s).padStart(2, '0')}`;
+    btn.disabled = true;
+    btn.classList.add('cooldown');
+    if (dot) dot.style.display = 'none';
+  } else { // exhausted
+    if (text) text.textContent = 'Hết lượt';
+    btn.disabled = true;
+    btn.classList.add('exhausted');
+    if (dot) dot.style.display = 'none';
+  }
+}
+
+let adsCountdownInterval = null;
+let adsReadyTimeout = null;
+
+function startAdsCountdownInterval() {
+  if (adsCountdownInterval) clearInterval(adsCountdownInterval);
+  adsCountdownInterval = setInterval(() => {
+    updateAdsBtnDisplay();
+    const status = getAdsRewardStatus();
+    if (status.state !== 'cooldown') {
+      updateCartNotifDot();
+      clearInterval(adsCountdownInterval);
+      adsCountdownInterval = null;
+    }
+  }, 1000);
+}
+
+function stopAdsCountdownInterval() {
+  if (adsCountdownInterval) {
+    clearInterval(adsCountdownInterval);
+    adsCountdownInterval = null;
+  }
+}
+
+function scheduleAdsReadyCallback() {
+  // Schedule a callback for when cooldown ends, so cart notif dot
+  // updates even if user is on the menu screen (not in shop).
+  if (adsReadyTimeout) clearTimeout(adsReadyTimeout);
+  const status = getAdsRewardStatus();
+  if (status.state === 'cooldown') {
+    adsReadyTimeout = setTimeout(() => {
+      adsReadyTimeout = null;
+      updateCartNotifDot();
+      updateAdsBtnDisplay();
+    }, status.remainingMs + 100);
+  }
+}
+
+function watchAdsReward() {
+  state.adsReward.lastWatched = Date.now();
+  state.adsReward.todayCount += 1;
+  ensureAdsRewardDay();
+  saveProgress();
+  addGold(ADS_REWARD_GOLD, 'Thưởng xem quảng cáo');
+  updateAdsBtnDisplay();
+  updateCartNotifDot();
+  startAdsCountdownInterval();
+  scheduleAdsReadyCallback();
+}
+
+function makeAdsRewardCard() {
+  const card = document.createElement('div');
+  card.className = 'shop-ads-reward';
+  card.innerHTML = `
+    <div class="ads-icon">📺</div>
+    <div class="ads-info">
+      <div class="ads-title">Xem quảng cáo</div>
+      <div class="ads-subtitle" id="ads-count-display">+50 vàng · 0/10 hôm nay</div>
+    </div>
+    <button class="ads-watch-btn" id="ads-watch-btn">
+      <span class="notif-dot" style="display:none;"></span>
+      <span id="ads-watch-text">▶ Xem</span>
+    </button>
+  `;
+  card.querySelector('#ads-watch-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    ensureAudio();
+    playTap();
+    if (getAdsRewardStatus().state !== 'ready') return;
+    watchAdsReward();
+  });
+  return card;
+}
+
+document.getElementById('shop-btn').addEventListener('click', () => {
+  ensureAudio();
+  playTap();
+  showShopScreen();
+});
+
+document.getElementById('shop-close-x').addEventListener('click', () => {
+  playTap();
+  hideShopScreen();
 });
 
 /* ============================================================
@@ -2633,8 +3476,8 @@ function onLevelWin() {
     );
     saveProgress();
   }
-  // Reward cash per level passed
-  addCash(LEVEL_WIN_REWARD);
+  // Reward gold per level passed
+  addGold(LEVEL_WIN_REWARD);
   // Show level complete popup
   setTimeout(() => {
     showCompletePopup();
@@ -3038,8 +3881,8 @@ function showReveal3() {
     }
     state.dishProgress[dishId] = maxStars;
     saveProgress();
-    // Big cash reward for completing a dish
-    addCash(DISH_COMPLETE_REWARD, 'Hoàn thành món!');
+    // Big gold reward for completing a dish
+    addGold(DISH_COMPLETE_REWARD, 'Hoàn thành món!');
     renderMenu();
     document.getElementById('reveal3-continue').classList.add('show');
     state.busy = false;
@@ -3059,7 +3902,9 @@ document.getElementById('reveal3-continue').addEventListener('click', () => {
    ============================================================ */
 loadProgress();
 renderMenu();
-updateCashDisplay();
+updateGoldDisplay();
+updateCartNotifDot();
+scheduleAdsReadyCallback();
 
 /* ============================================================
    FULLSCREEN HANDLING
