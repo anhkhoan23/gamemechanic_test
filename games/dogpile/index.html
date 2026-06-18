@@ -27,6 +27,38 @@ body{display:flex;flex-direction:column;align-items:center;font-family:system-ui
 .lang-btn{padding:3px 7px;font-size:10px;font-weight:500;color:#888;background:none;border:none;cursor:pointer;font-family:inherit;letter-spacing:0.3px}
 .lang-btn:hover{background:#f5f0e8;color:#444}
 .lang-btn.active{background:#2a2520;color:#fdf9f0}
+
+/* Buttons row */
+#btns{width:100%;max-width:420px;display:flex;gap:6px}
+#btns button{flex:1;padding:9px;font-size:13px;border-radius:8px;border:1px solid #c8b89a;background:#fff;color:#333;cursor:pointer;font-family:inherit}
+#btns button:active{background:#f0ead8}
+#btn-lb{flex:0 0 auto!important;width:42px!important;font-size:16px!important}
+
+/* Modal overlay */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100;align-items:center;justify-content:center}
+#modal-overlay.show{display:flex}
+.modal{background:#fdf9f0;border:2px solid #c8b89a;border-radius:12px;width:min(360px,92vw);padding:20px;font-family:system-ui,sans-serif;position:relative}
+.modal h2{font-size:15px;font-weight:700;color:#2a2520;margin-bottom:14px;text-align:center;letter-spacing:0.3px}
+.modal-close{position:absolute;top:10px;right:12px;background:none;border:none;font-size:18px;cursor:pointer;color:#888;line-height:1}
+.modal-close:hover{color:#333}
+
+/* Leaderboard table */
+#lb-table{width:100%;border-collapse:collapse;font-size:13px}
+#lb-table th{text-align:left;color:#888;font-weight:500;font-size:11px;padding:4px 6px;border-bottom:1px solid #e0d4be}
+#lb-table td{padding:6px 6px;border-bottom:1px solid #f0ead8;color:#333}
+#lb-table tr.me td{background:#f5f0e8;font-weight:600;color:#2a2520}
+#lb-table .rank{width:28px;text-align:center;color:#888}
+#lb-table .score-col{text-align:right;font-variant-numeric:tabular-nums}
+#lb-empty{text-align:center;color:#aaa;font-size:13px;padding:20px 0}
+#lb-loading{text-align:center;color:#aaa;font-size:13px;padding:20px 0}
+
+/* Name input modal */
+#name-row{display:flex;gap:8px;margin-top:4px}
+#name-input{flex:1;padding:8px 10px;border:1px solid #c8b89a;border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:#333;outline:none}
+#name-input:focus{border-color:#2a2520}
+#name-submit{padding:8px 14px;background:#2a2520;color:#fdf9f0;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap}
+#name-submit:active{opacity:0.8}
+#name-hint{font-size:11px;color:#aaa;margin-top:6px;text-align:center}
 </style>
 </head>
 <body>
@@ -46,8 +78,41 @@ body{display:flex;flex-direction:column;align-items:center;font-family:system-ui
 </div>
 
 <div id="msg">Chạm để thả chó!</div>
-<div id="btns"><button id="btn-restart" onclick="restartGame()">Chơi lại</button></div>
+<div id="btns">
+  <button id="btn-restart" onclick="restartGame()">Chơi lại</button>
+  <button id="btn-lb" onclick="openLB()" title="Bảng xếp hạng">🏆</button>
+</div>
 
+<!-- Leaderboard modal -->
+<div id="modal-overlay" onclick="if(event.target===this)closeLB()">
+  <div class="modal" id="modal-lb">
+    <button class="modal-close" onclick="closeLB()">✕</button>
+    <h2 id="lb-title">🏆 Bảng xếp hạng</h2>
+    <div id="lb-loading">Đang tải...</div>
+    <table id="lb-table" style="display:none">
+      <thead><tr>
+        <th class="rank">#</th>
+        <th id="lb-th-name">Tên</th>
+        <th id="lb-th-score" class="score-col">Điểm</th>
+      </tr></thead>
+      <tbody id="lb-body"></tbody>
+    </table>
+    <div id="lb-empty" style="display:none">Chưa có điểm nào!</div>
+  </div>
+</div>
+
+<!-- Name input modal -->
+<div id="modal-overlay-name" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:center;justify-content:center">
+  <div class="modal">
+    <h2 id="name-modal-title">Lưu điểm của bạn</h2>
+    <div id="name-row">
+      <input id="name-input" type="text" maxlength="20" placeholder="Tên của bạn..." autocomplete="off">
+      <button id="name-submit" onclick="submitScore()">Lưu</button>
+    </div>
+    <div id="name-hint">Bỏ qua: nhấn ✕ hoặc để trống</div>
+    <button class="modal-close" onclick="closeNameModal()">✕</button>
+  </div>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 <script>
 // ── i18n ──────────────────────────────────────────────────────────────────────
@@ -60,6 +125,15 @@ const T = {
     win:     '🎉 Saint Bernard! You win!',
     lose:    'Overflowed! Game over!',
     restart: 'Restart',
+    lb_title:'🏆 Leaderboard',
+    lb_name: 'Name',
+    lb_score:'Score',
+    lb_empty:'No scores yet!',
+    lb_load: 'Loading...',
+    name_title:'Save your score',
+    name_ph:  'Your name...',
+    name_save:'Save',
+    name_skip:'Skip: press ✕ or leave blank',
   },
   vi: {
     score:   'điểm',
@@ -68,6 +142,15 @@ const T = {
     win:     '🎉 Saint Bernard! Bạn thắng!',
     lose:    'Tràn ra ngoài! Game over!',
     restart: 'Chơi lại',
+    lb_title:'🏆 Bảng xếp hạng',
+    lb_name: 'Tên',
+    lb_score:'Điểm',
+    lb_empty:'Chưa có điểm nào!',
+    lb_load: 'Đang tải...',
+    name_title:'Lưu điểm của bạn',
+    name_ph:  'Tên của bạn...',
+    name_save:'Lưu',
+    name_skip:'Bỏ qua: nhấn ✕ hoặc để trống',
   },
   zh: {
     score:   '分数',
@@ -76,6 +159,15 @@ const T = {
     win:     '🎉 圣伯纳！你赢了！',
     lose:    '溢出了！游戏结束！',
     restart: '重新开始',
+    lb_title:'🏆 排行榜',
+    lb_name: '名字',
+    lb_score:'分数',
+    lb_empty:'暂无记录！',
+    lb_load: '加载中...',
+    name_title:'保存你的分数',
+    name_ph:  '你的名字...',
+    name_save:'保存',
+    name_skip:'跳过：按✕或留空',
   },
 };
 
@@ -93,13 +185,22 @@ function applyLang() {
   document.getElementById('label-score').childNodes[0].textContent = t.score;
   document.getElementById('label-best').childNodes[0].textContent  = t.best;
   document.getElementById('btn-restart').textContent = t.restart;
-  // Always update hint if game is not over
   if (!gameOver) {
     document.getElementById('msg').textContent = t.hint;
   }
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.lang === currentLang);
   });
+  // modal strings
+  document.getElementById('lb-title').textContent    = t.lb_title;
+  document.getElementById('lb-th-name').textContent  = t.lb_name;
+  document.getElementById('lb-th-score').textContent = t.lb_score;
+  document.getElementById('lb-loading').textContent  = t.lb_load;
+  document.getElementById('lb-empty').textContent    = t.lb_empty;
+  document.getElementById('name-modal-title').textContent = t.name_title;
+  document.getElementById('name-input').placeholder  = t.name_ph;
+  document.getElementById('name-submit').textContent = t.name_save;
+  document.getElementById('name-hint').textContent   = t.name_skip;
 }
 
 const {Engine,Bodies,Body,World} = Matter;
@@ -295,7 +396,11 @@ function doMerge(a,b){
     y:(a.velocity.y+b.velocity.y)*0.35-1.8
   });
   Matter.World.add(world,nb);dogBodies.push(nb);
-  if(nt===12) document.getElementById('msg').textContent=T[currentLang].win;
+  if(nt===12){
+    document.getElementById('msg').textContent=T[currentLang].win;
+    gameOver=true;
+    setTimeout(() => showNameModal(score), 800);
+  }
 }
 
 function checkLose(){
@@ -304,6 +409,7 @@ function checkLose(){
     if(Date.now()-b.born>1500&&b.position.y-sr(b.dogType)<DANGER_Y){
       gameOver=true;
       document.getElementById('msg').textContent=T[currentLang].lose;
+      setTimeout(() => showNameModal(score), 800);
     }
   }
 }
@@ -399,7 +505,100 @@ function loop(timestamp){
   drawFrame();requestAnimationFrame(loop);
 }
 
-// boot — wait for layout to paint so clientHeight is valid
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+// 👉 Paste URL Apps Script của bạn vào đây sau khi deploy
+const LEADERBOARD_URL = 'https://script.google.com/a/macros/garena.vn/s/AKfycby1bzJAmIYO1OAf3DSU2f_-a1azLznh8jAftUfPDfhQ9EJNITJhzC36zGvzSP8O6oNK/exec';
+
+const NAME_KEY = 'dogpile_playername';
+let pendingScore = 0;
+
+function openLB() {
+  document.getElementById('modal-overlay').classList.add('show');
+  loadLB();
+}
+function closeLB() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+async function loadLB() {
+  const t = T[currentLang];
+  const loading = document.getElementById('lb-loading');
+  const table   = document.getElementById('lb-table');
+  const empty   = document.getElementById('lb-empty');
+  loading.style.display = 'block';
+  table.style.display   = 'none';
+  empty.style.display   = 'none';
+
+  if (!LEADERBOARD_URL || LEADERBOARD_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    loading.textContent = '⚠️ Chưa cấu hình LEADERBOARD_URL';
+    return;
+  }
+
+  try {
+    const res  = await fetch(LEADERBOARD_URL);
+    const json = await res.json();
+    if (!json.ok || !json.data.length) {
+      loading.style.display = 'none';
+      empty.style.display   = 'block';
+      return;
+    }
+    const myName = localStorage.getItem(NAME_KEY) || '';
+    const tbody  = document.getElementById('lb-body');
+    tbody.innerHTML = '';
+    json.data.forEach((row, i) => {
+      const tr = document.createElement('tr');
+      const isMe = myName && row.name === myName;
+      if (isMe) tr.className = 'me';
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+      tr.innerHTML = `<td class="rank">${medal}</td><td>${escHtml(row.name)}</td><td class="score-col">${row.score.toLocaleString()}</td>`;
+      tbody.appendChild(tr);
+    });
+    loading.style.display = 'none';
+    table.style.display   = 'table';
+  } catch(e) {
+    loading.textContent = '⚠️ Không tải được BXH';
+  }
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Hiện modal nhập tên sau khi game kết thúc
+function showNameModal(score) {
+  pendingScore = score;
+  const saved = localStorage.getItem(NAME_KEY) || '';
+  document.getElementById('name-input').value = saved;
+  document.getElementById('modal-overlay-name').style.display = 'flex';
+  setTimeout(() => document.getElementById('name-input').focus(), 100);
+}
+function closeNameModal() {
+  document.getElementById('modal-overlay-name').style.display = 'none';
+}
+
+async function submitScore() {
+  const input = document.getElementById('name-input');
+  const name  = input.value.trim();
+  if (!name) { closeNameModal(); return; }
+  localStorage.setItem(NAME_KEY, name);
+  closeNameModal();
+
+  if (!LEADERBOARD_URL || LEADERBOARD_URL === 'YOUR_APPS_SCRIPT_URL_HERE') return;
+
+  try {
+    await fetch(LEADERBOARD_URL, {
+      method: 'POST',
+      body: JSON.stringify({ name, score: pendingScore }),
+    });
+  } catch(e) { /* silent fail */ }
+}
+
+// Bind Enter key trên input
+document.getElementById('name-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitScore();
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
 function boot(){
   resizeCanvas();
   // If CH is still 0 (layout not ready), retry next frame
