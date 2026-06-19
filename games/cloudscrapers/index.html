@@ -275,11 +275,37 @@ function boot(){
   buildRewardIconStyles();
   resizeCanvases();
   window.addEventListener('resize', resizeCanvases);
+  // iOS Safari: when user switches away and back, viewport may have changed
+  // and rAF may have been suspended. Force a refresh on resume.
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden) handleResume();
+  });
+  // Page restore from bfcache (iOS) — re-init render state
+  window.addEventListener('pageshow', ()=>handleResume());
+  // Some mobile browsers fire focus when returning
+  window.addEventListener('focus', ()=>handleResume());
   gc.addEventListener('mousemove', onMouseMove);
   gc.addEventListener('mouseleave', ()=>{hoverCol=-1;hoverRow=-1;});
   gc.addEventListener('click', onGridClick);
   gc.addEventListener('touchend', onTouch, {passive:false});
   initState();
+  startLoop();
+}
+
+// Re-sync canvas state and ensure render loop is alive after returning from background
+let loopAlive=false;
+function handleResume(){
+  // Re-render offscreen scenes (some browsers blank cached canvases)
+  lastBgSig='';
+  // Recompute sizes — viewport may have changed during suspension
+  resizeCanvases();
+  // Restart loop if it died
+  startLoop();
+}
+
+function startLoop(){
+  if(loopAlive) return;
+  loopAlive=true;
   requestAnimationFrame(gameLoop);
 }
 
@@ -926,7 +952,18 @@ function restartGame(){
 }
 
 // ── Loop ──────────────────────────────────────────────────────────────────────
-function gameLoop(){drawGrid();drawOverlay();requestAnimationFrame(gameLoop);}
+function gameLoop(){
+  try{
+    // If canvas got zeroed out (rare on mobile resume), force resize
+    if(gc.width===0 || gc.height===0){ resizeCanvases(); }
+    drawGrid();
+    drawOverlay();
+  }catch(e){
+    // Don't let a transient error kill the loop
+    console.error('gameLoop error:', e);
+  }
+  requestAnimationFrame(gameLoop);
+}
 window.addEventListener('load',boot);
 </script>
 </body>
