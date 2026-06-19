@@ -800,15 +800,33 @@ function genOneQuest(){
   return {shape,mat,reward,done:false};
 }
 
-// Reward generation:
-//   Number of reward materials:  1 type → 40%,  2 types → 60%
-//   Quantity per material:        1 unit → 75%, 2 units → 25%
+// Reward generation — tiered by player progress (uses currentFloor as reference).
+// Average reward per quest (E):
+//   Tier 1, floors 1-30:  E ~ 2.70  — generous, helps weak players reach floor 30
+//   Tier 2, floors 31-45: E ~ 2.20  — medium, paces medium players to floor 45
+//   Tier 3, floors 46+:   E ~ 1.65  — sparse, caps strong players near floor 60
 function generateReward(){
-  const numTypes = Math.random() < 0.40 ? 1 : 2;
+  // Reference floor = the highest unlocked floor (player's current ceiling)
+  const f = unlockedFloors;
+  let pTwoTypes, pTwoUnits;
+  if(f <= 30){
+    // Tier 1: numTypes 1=20%, 2=80% | qty 1=50%, 2=50%
+    pTwoTypes = 0.80;
+    pTwoUnits = 0.50;
+  } else if(f <= 45){
+    // Tier 2: numTypes 1=30%, 2=70% | qty 1=70%, 2=30%
+    pTwoTypes = 0.70;
+    pTwoUnits = 0.30;
+  } else {
+    // Tier 3: numTypes 1=55%, 2=45% | qty 1=85%, 2=15%
+    pTwoTypes = 0.45;
+    pTwoUnits = 0.15;
+  }
+  const numTypes = Math.random() < pTwoTypes ? 2 : 1;
   const shuffled = [...MAT_KEYS].sort(()=>Math.random()-0.5).slice(0, numTypes);
   const reward = {};
   shuffled.forEach(k => {
-    reward[k] = Math.random() < 0.75 ? 1 : 2;
+    reward[k] = Math.random() < pTwoUnits ? 2 : 1;
   });
   return reward;
 }
