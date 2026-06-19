@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Xếp Hình Xây Nhà Việt</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#EDE0CC;font-family:system-ui,-apple-system,sans-serif;color:#3D2B1F}
+
+#app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;padding:8px;gap:6px}
+
+/* ── Top bar ── */
+#topbar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#fff;border-radius:10px;border:1px solid #D4C0A4;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
+.stat-box{text-align:center;min-width:60px}
+.stat-label{font-size:10px;color:#9A7A60;letter-spacing:1px;text-transform:uppercase}
+.stat-val{font-size:22px;font-weight:800;color:#3D2B1F;line-height:1.1}
+#title-badge{font-size:12px;font-weight:700;color:#C0392B;letter-spacing:0.5px;text-align:center;line-height:1.3}
+
+/* ── Main row ── */
+#main{display:flex;gap:6px;flex:1;min-height:0}
+
+/* ── Quest panel — [1] half width = 44px ── */
+#quest-panel{
+  width:88px;flex-shrink:0;
+  display:flex;flex-direction:column;gap:4px;
+  align-items:stretch;
+}
+/* [3] Quest reset button at top of panel */
+#btn-quest-reset{
+  width:100%;padding:4px 3px;
+  background:#fff;border:1.5px solid #D4C0A4;border-radius:6px;
+  font-size:13px;cursor:pointer;font-family:inherit;
+  color:#9A7A60;display:flex;flex-direction:column;align-items:center;gap:1px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.05);transition:border-color .12s,background .12s;
+  flex-shrink:0;
+}
+#btn-quest-reset:hover{background:#FFF0EE;border-color:#C0392B;color:#C0392B}
+#btn-quest-reset.depleted{opacity:0.38;cursor:not-allowed}
+#quest-reset-label{font-size:8px;color:#9A7A60;line-height:1}
+#quest-reset-count{font-size:8px;font-weight:700;color:#C0392B;line-height:1}
+/* [2] quest cards — 2 by default, flex:1 so they fill space evenly */
+.quest-card{
+  background:#fff;border:1.5px solid #D4C0A4;border-radius:7px;
+  padding:4px 3px;cursor:default;
+  box-shadow:0 1px 3px rgba(0,0,0,0.05);
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  overflow:hidden;flex-shrink:0;
+  transition:opacity .35s ease, border-color .25s ease, background .25s ease, box-shadow .25s ease;
+  opacity:1;
+}
+.quest-card.done{
+  border-color:#4A7C3F;background:#EEF5EB;
+  box-shadow:0 0 8px rgba(74,124,63,0.3);
+}
+.quest-card.fading{opacity:0}
+.quest-card.hidden{display:none}
+.quest-label{font-size:9px;color:#9A7A60;text-transform:uppercase;letter-spacing:0.5px}
+.quest-preview{display:flex;flex-direction:column;gap:1px;align-items:center;justify-content:center;width:57px;height:57px;flex-shrink:0}
+.quest-row{display:flex;gap:1px}
+.quest-cell{width:12px;height:12px;border-radius:2px;background:#EDE0CC}
+.quest-cell.filled{border:1px solid rgba(0,0,0,0.1)}
+.quest-divider{width:80%;height:1px;background:#D4C0A4;margin:2px 0 1px}
+.quest-reward-label{font-size:8px;color:#9A7A60;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}
+.quest-reward{font-size:10px;line-height:1.2;text-align:center;display:flex;flex-direction:column;gap:1px;align-items:center;flex-shrink:0}
+.reward-row{display:inline-flex;align-items:center;gap:3px}
+.reward-icon{display:inline-block;width:14px;height:14px;background-size:contain;background-repeat:no-repeat;background-position:center}
+
+/* ── Playfield ── */
+#field-wrap{flex:1;min-width:0;display:flex;flex-direction:column}
+#playfield{flex:1;position:relative;min-height:0}
+#grid-canvas{display:block;width:100%;height:100%;border-radius:8px;border:1.5px solid #D4C0A4}
+#overlay-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:8px}
+
+/* ── Bottom row: full width under playfield ── */
+#bottom-row{display:flex;gap:6px;align-items:stretch}
+
+/* Reset game button — same half-size as mat-btn, left side */
+#btn-reset{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  background:#fff;border:2px solid #D4C0A4;border-radius:6px;
+  cursor:pointer;font-family:inherit;flex-shrink:0;
+  box-shadow:0 1px 3px rgba(0,0,0,0.05);color:#9A7A60;
+  transition:border-color .12s,background .12s;
+  aspect-ratio:1/1;padding:6px;width:97px;
+}
+#btn-reset:hover{background:#FFF0EE;border-color:#C0392B;color:#C0392B}
+#btn-reset .reset-icon{font-size:28px;line-height:1}
+#btn-reset .reset-label{font-size:11px;font-weight:600;letter-spacing:0.3px}
+
+/* Inventory — square mat buttons, half-size */
+#inventory{display:flex;gap:8px;justify-content:flex-end;flex:1}
+.mat-btn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  background:#fff;border:2px solid #D4C0A4;border-radius:6px;
+  cursor:pointer;transition:border-color .12s,background .12s;
+  aspect-ratio:1/1;width:108px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.05);
+  padding:3px;
+}
+.mat-btn:hover{background:#FDF5EB;border-color:#BFA882}
+.mat-btn.selected{border-color:#4A7C3F;background:#EEF5EB;box-shadow:0 0 8px rgba(74,124,63,0.25)}
+.mat-btn.empty{opacity:0.38;cursor:not-allowed}
+.mat-icon{width:28px;height:28px}
+.mat-count{font-size:18px;font-weight:800;color:#3D2B1F;line-height:1}
+.mat-name{font-size:11px;color:#9A7A60;text-align:center;line-height:1.2}
+
+/* ── Hint ── */
+#hint{font-size:10px;color:#9A7A60;text-align:center;height:14px;letter-spacing:0.3px}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(16px);background:#3D2B1F;color:#F5E6C8;font-size:13px;font-weight:700;padding:7px 16px;border-radius:20px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:50;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Game over ── */
+#gameover{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center}
+#gameover.show{display:flex}
+.go-box{background:#fff;border:2px solid #D4C0A4;border-radius:14px;padding:28px 32px;text-align:center;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,0.18)}
+.go-box h2{font-size:20px;font-weight:800;color:#C0392B;margin-bottom:8px}
+.go-box p{font-size:13px;color:#9A7A60;margin-bottom:4px}
+.go-score{font-size:44px;font-weight:800;color:#3D2B1F;margin:8px 0}
+.go-btn{margin-top:16px;padding:10px 28px;background:#C0392B;color:#fff;font-size:14px;font-weight:700;border:none;border-radius:8px;cursor:pointer;font-family:inherit}
+.go-btn:hover{background:#A93226}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Top bar -->
+  <div id="topbar">
+    <div class="stat-box">
+      <div class="stat-label">Điểm</div>
+      <div class="stat-val" id="score-val">0</div>
+    </div>
+    <div id="title-badge">🏠 Xây Nhà Việt</div>
+    <div class="stat-box">
+      <div class="stat-label">Tầng</div>
+      <div class="stat-val" id="floor-val">1</div>
+    </div>
+  </div>
+
+  <!-- Main: quest panel | grid -->
+  <div id="main">
+    <!-- [1,2,3] Quest panel: narrow, 2 quests default, reset button on top -->
+    <div id="quest-panel">
+      <button id="btn-quest-reset" onclick="resetQuests()">
+        <span style="font-size:18px;line-height:1">🔀</span>
+        <span style="font-size:9px;color:#9A7A60;line-height:1.2">Đổi nhiệm vụ</span>
+        <span id="quest-reset-count" style="font-size:9px;color:#C0392B;font-weight:700">Còn 5 lần</span>
+      </button>
+      <div class="quest-card" id="quest-0"></div>
+      <div class="quest-card" id="quest-1"></div>
+      <div class="quest-card hidden" id="quest-2"></div>
+    </div>
+
+    <div id="field-wrap">
+      <div id="playfield">
+        <canvas id="grid-canvas"></canvas>
+        <canvas id="overlay-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom: [5] reset LEFT, inventory RIGHT -->
+  <div id="bottom-row">
+    <button id="btn-reset" onclick="restartGame()">
+      <span class="reset-icon">🔄</span>
+      <span class="reset-label">Chơi lại</span>
+    </button>
+    <div id="inventory">
+      <button class="mat-btn" id="btn-gach" onclick="selectMat('gach')">
+        <canvas class="mat-icon" id="icon-gach" width="28" height="28"></canvas>
+        <div class="mat-count" id="count-gach">10</div>
+        <div class="mat-name">Gạch Ống</div>
+      </button>
+      <button class="mat-btn" id="btn-go" onclick="selectMat('go')">
+        <canvas class="mat-icon" id="icon-go" width="28" height="28"></canvas>
+        <div class="mat-count" id="count-go">10</div>
+        <div class="mat-name">Gỗ Mít</div>
+      </button>
+      <button class="mat-btn" id="btn-tre" onclick="selectMat('tre')">
+        <canvas class="mat-icon" id="icon-tre" width="28" height="28"></canvas>
+        <div class="mat-count" id="count-tre">10</div>
+        <div class="mat-name">Tre Xanh</div>
+      </button>
+    </div>
+  </div>
+
+  <div id="hint">Chọn nguyên liệu → click ô để đặt</div>
+</div>
+
+<div id="toast"></div>
+<div id="gameover">
+  <div class="go-box">
+    <h2>🏠 Kết Thúc!</h2>
+    <p>Bạn đã xây được</p>
+    <div class="go-score" id="go-score">0</div>
+    <p><span id="go-floors">0</span> tầng hoàn thành</p>
+    <button class="go-btn" onclick="restartGame()">Chơi lại</button>
+  </div>
+</div>
+
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+const COLS = 5;
+const INIT_COUNT = 10;
+const MAX_QUEST_RESETS = 5;
+const MAX_VISIBLE_FLOORS = 6;
+
+const MAT = {
+  gach: { name:'Gạch Ống', house:'Nhà Gạch', color:'#C0392B', stroke:'#8B1A1A', light:'#E85B4A', bg:'#7B1010' },
+  go:   { name:'Gỗ Mít',   house:'Nhà Gỗ',   color:'#D4860B', stroke:'#8B5A0A', light:'#F0A830', bg:'#5a3a05' },
+  tre:  { name:'Tre Xanh', house:'Nhà Tre',  color:'#4A7C3F', stroke:'#2D5225', light:'#6BAE5E', bg:'#1e3d18' },
+};
+const MAT_KEYS = ['gach','go','tre'];
+
+// All Tetris tetromino orientations — 19 total
+// Format [col, row], row 0 = top
+const SHAPES = [
+  // I — 2 orientations
+  { name:'I-h',  cells:[[0,0],[1,0],[2,0],[3,0]] },               // horizontal
+  { name:'I-v',  cells:[[0,0],[0,1],[0,2],[0,3]] },               // vertical
+  // O — 1 orientation
+  { name:'O',    cells:[[0,0],[1,0],[0,1],[1,1]] },
+  // T — 4 orientations
+  { name:'T-up', cells:[[0,1],[1,1],[2,1],[1,0]] },               // ⊥ pointing up
+  { name:'T-rt', cells:[[0,0],[0,1],[0,2],[1,1]] },               // ⊢ pointing right
+  { name:'T-dn', cells:[[0,0],[1,0],[2,0],[1,1]] },               // ⊤ pointing down
+  { name:'T-lt', cells:[[1,0],[1,1],[1,2],[0,1]] },               // ⊣ pointing left
+  // L — 4 orientations
+  { name:'L-0',  cells:[[0,0],[0,1],[0,2],[1,2]] },               // ┘ rotated
+  { name:'L-1',  cells:[[0,0],[1,0],[2,0],[0,1]] },
+  { name:'L-2',  cells:[[0,0],[1,0],[1,1],[1,2]] },
+  { name:'L-3',  cells:[[2,0],[0,1],[1,1],[2,1]] },
+  // J — 4 orientations (mirror of L)
+  { name:'J-0',  cells:[[1,0],[1,1],[0,2],[1,2]] },
+  { name:'J-1',  cells:[[0,0],[0,1],[1,1],[2,1]] },
+  { name:'J-2',  cells:[[0,0],[1,0],[0,1],[0,2]] },
+  { name:'J-3',  cells:[[0,0],[1,0],[2,0],[2,1]] },
+  // S — 2 orientations
+  { name:'S-h',  cells:[[1,0],[2,0],[0,1],[1,1]] },
+  { name:'S-v',  cells:[[0,0],[0,1],[1,1],[1,2]] },
+  // Z — 2 orientations
+  { name:'Z-h',  cells:[[0,0],[1,0],[1,1],[2,1]] },
+  { name:'Z-v',  cells:[[1,0],[0,1],[1,1],[0,2]] },
+  // Diagonals — non-Tetris shapes (cells touch only at corners, not edges)
+  { name:'Diag4-down-right', cells:[[0,0],[1,1],[2,2],[3,3]] },     // x--- / -x-- / --x- / ---x
+  { name:'Diag4-down-left',  cells:[[3,0],[2,1],[1,2],[0,3]] },     // ---x / --x- / -x-- / x---
+  { name:'Diag3-down-left',  cells:[[2,0],[1,1],[0,2]] },           // --x / -x- / x--
+  { name:'Diag3-down-right', cells:[[0,0],[1,1],[2,2]] },           // x-- / -x- / --x
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let inventory, selectedMat, grid;
+let currentFloor, unlockedFloors, score, quests, questCount, questResetsLeft;
+let gameOver, totalFloorsCompleted;
+let gc, gctx, oc, octx;
+let CELL, GRID_W, GRID_H, OFFSET_X, OFFSET_Y;
+let hoverCol=-1, hoverRow=-1, overlayAnims=[];
+
+// ── Coord helpers ─────────────────────────────────────────────────────────────
+function visibleFloorCount(){ return Math.min(unlockedFloors, MAX_VISIBLE_FLOORS); }
+function lowestVisibleFloor(){ return unlockedFloors - visibleFloorCount() + 1; }
+function floorIsVisible(floor){ return floor>=lowestVisibleFloor() && floor<=unlockedFloors; }
+function floorToCanvasRow(floor){ return unlockedFloors - floor; }
+function canvasRowToFloor(cRow) { return unlockedFloors - cRow; }
+function floorToWorldRow(floor) { return floor - 1; }
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+function boot(){
+  gc=document.getElementById('grid-canvas');
+  oc=document.getElementById('overlay-canvas');
+  gctx=gc.getContext('2d'); octx=oc.getContext('2d');
+  drawMatIcons();
+  buildRewardIconStyles();
+  resizeCanvases();
+  window.addEventListener('resize', resizeCanvases);
+  gc.addEventListener('mousemove', onMouseMove);
+  gc.addEventListener('mouseleave', ()=>{hoverCol=-1;hoverRow=-1;});
+  gc.addEventListener('click', onGridClick);
+  gc.addEventListener('touchend', onTouch, {passive:false});
+  initState();
+  requestAnimationFrame(gameLoop);
+}
+
+function initState(){
+  inventory={gach:INIT_COUNT, go:INIT_COUNT, tre:INIT_COUNT};
+  selectedMat=null; currentFloor=1; unlockedFloors=1;
+  score=0; quests=[]; questCount=2; questResetsLeft=MAX_QUEST_RESETS;
+  gameOver=false; totalFloorsCompleted=0;
+  overlayAnims=[]; hoverCol=-1; hoverRow=-1;
+  grid=[];
+  for(let c=0;c<COLS;c++){grid[c]=[];for(let r=0;r<200;r++) grid[c][r]=null;}
+  resizeCanvases();
+  generateQuests(2); // always start with 2
+  updateInventoryUI();
+  updateScoreUI();
+  updateQuestResetBtn();
+  document.getElementById('floor-val').textContent='1';
+  updateHint();
+}
+
+function resizeCanvases(){
+  const pf=document.getElementById('playfield');
+  const w=pf.clientWidth||220, h=pf.clientHeight||360;
+  gc.width=w; gc.height=h; oc.width=w; oc.height=h;
+  const vis=visibleFloorCount();
+  // Reserve breathing room inside canvas (horizontal padding) so grid doesn't kiss the border
+  const SIDE_PAD=20;
+  const usableW=w-SIDE_PAD*2;
+  CELL=Math.floor(Math.min(usableW/COLS, h/Math.max(1,vis)));
+  GRID_W=CELL*COLS; GRID_H=CELL*vis;
+  OFFSET_X=Math.floor((w-GRID_W)/2);
+  OFFSET_Y=h-GRID_H;
+}
+
+function canvasToGrid(cx,cy){
+  const col=Math.floor((cx-OFFSET_X)/CELL);
+  const cRow=Math.floor((cy-OFFSET_Y)/CELL);
+  if(col<0||col>=COLS||cRow<0||cRow>=visibleFloorCount()) return null;
+  return {col, cRow, floor:canvasRowToFloor(cRow)};
+}
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+function drawMatIcons(){
+  drawGachIcon(document.getElementById('icon-gach').getContext('2d'),28);
+  drawGoIcon  (document.getElementById('icon-go'  ).getContext('2d'),28);
+  drawTreIcon (document.getElementById('icon-tre' ).getContext('2d'),28);
+}
+
+// Build small icon data URLs for reward display
+function buildRewardIconStyles(){
+  const drawers={gach:drawGachIcon, go:drawGoIcon, tre:drawTreIcon};
+  const css=[];
+  for(const k of MAT_KEYS){
+    const cv=document.createElement('canvas');cv.width=32;cv.height=32;
+    drawers[k](cv.getContext('2d'),32);
+    const url=cv.toDataURL('image/png');
+    css.push(`.reward-icon[data-mat="${k}"]{background-image:url('${url}')}`);
+  }
+  const styleEl=document.createElement('style');
+  styleEl.textContent=css.join('\n');
+  document.head.appendChild(styleEl);
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+function drawGachIcon(ctx,s){
+  ctx.clearRect(0,0,s,s);
+  ctx.fillStyle='#C0392B';roundRect(ctx,2,2,s-4,s-4,3);ctx.fill();
+  ctx.strokeStyle='#8B1A1A';ctx.lineWidth=1;roundRect(ctx,2,2,s-4,s-4,3);ctx.stroke();
+  ctx.fillStyle='#7B1010';
+  const hw=(s-10)/4,hh=(s-10)/2.5,hx=[4,s/2-hw/2+2],hy=[5,s/2+1];
+  for(let rx=0;rx<2;rx++) for(let ry=0;ry<2;ry++){roundRect(ctx,hx[rx],hy[ry],hw,hh,1.5);ctx.fill();}
+}
+function drawGoIcon(ctx,s){
+  ctx.clearRect(0,0,s,s);
+  ctx.fillStyle='#D4860B';roundRect(ctx,2,2,s-4,s-4,3);ctx.fill();
+  ctx.strokeStyle='#8B5A0A';ctx.lineWidth=1;roundRect(ctx,2,2,s-4,s-4,3);ctx.stroke();
+  ctx.strokeStyle='rgba(139,90,10,0.5)';ctx.lineWidth=1;
+  for(let i=0;i<4;i++){const y=6+i*6;ctx.beginPath();ctx.moveTo(4,y);ctx.lineTo(s-4,y+2);ctx.stroke();}
+  ctx.strokeStyle='rgba(100,60,5,0.35)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.ellipse(s*0.6,s*0.4,4,3,0.3,0,Math.PI*2);ctx.stroke();
+}
+function drawTreIcon(ctx,s){
+  ctx.clearRect(0,0,s,s);
+  ctx.fillStyle='#4A7C3F';roundRect(ctx,6,2,s-12,s-4,4);ctx.fill();
+  ctx.strokeStyle='#2D5225';ctx.lineWidth=1;roundRect(ctx,6,2,s-12,s-4,4);ctx.stroke();
+  ctx.strokeStyle='#2D5225';ctx.lineWidth=2;
+  [s*0.35,s*0.65].forEach(y=>{ctx.beginPath();ctx.moveTo(5,y);ctx.lineTo(s-5,y);ctx.stroke();});
+  ctx.fillStyle='rgba(107,174,94,0.35)';ctx.fillRect(9,4,4,s-8);
+}
+
+// ── Draw cell ─────────────────────────────────────────────────────────────────
+function drawCell(ctx,px,py,size,matKey,alpha){
+  alpha=alpha===undefined?1:alpha;
+  const m=MAT[matKey];ctx.save();ctx.globalAlpha=alpha;
+  const pad=2,r=3;
+  ctx.fillStyle=m.color;roundRect(ctx,px+pad,py+pad,size-pad*2,size-pad*2,r);ctx.fill();
+  ctx.strokeStyle=m.stroke;ctx.lineWidth=1.5;roundRect(ctx,px+pad,py+pad,size-pad*2,size-pad*2,r);ctx.stroke();
+  if(matKey==='gach'){
+    ctx.fillStyle=m.bg;
+    const hw=Math.max(3,(size-14)/2),hh=Math.max(3,(size-12)/2);
+    const xs=[px+pad+3,px+size/2+1],ys=[py+pad+3,py+size/2+1];
+    for(let rx=0;rx<2;rx++) for(let ry=0;ry<2;ry++){
+      if(xs[rx]+hw<px+size-pad&&ys[ry]+hh<py+size-pad){roundRect(ctx,xs[rx],ys[ry],hw,hh,1.5);ctx.fill();}
+    }
+  } else if(matKey==='go'){
+    ctx.strokeStyle='rgba(139,90,10,0.4)';ctx.lineWidth=0.8;
+    for(let i=0;i<3;i++){const ly=py+pad+3+i*((size-pad*2-6)/3);ctx.beginPath();ctx.moveTo(px+pad+2,ly);ctx.lineTo(px+size-pad-2,ly+1.5);ctx.stroke();}
+  } else if(matKey==='tre'){
+    ctx.strokeStyle=m.stroke;ctx.lineWidth=1.5;
+    [py+size*0.35,py+size*0.65].forEach(ny=>{ctx.beginPath();ctx.moveTo(px+pad+2,ny);ctx.lineTo(px+size-pad-2,ny);ctx.stroke();});
+    ctx.fillStyle='rgba(107,174,94,0.28)';ctx.fillRect(px+size/2-size*0.08,py+pad+2,size*0.14,size-pad*2-4);
+  }
+  ctx.fillStyle='rgba(255,255,255,0.13)';ctx.fillRect(px+pad+2,py+pad+2,size-pad*2-4,2);
+  ctx.restore();
+}
+
+// ── Background scenes — Option A: fixed images, scroll camera ─────────────────
+// Each scene is pre-rendered ONCE to an offscreen canvas:
+//   City:   exactly FLOORS_PER_SCENE * CELL tall, floor 1 at BOTTOM, floor 20 at TOP
+//   Clouds: same, floor 21 at bottom, floor 40 at top
+//   Space:  same, floor 41 at bottom, floor 60 at top (tile upward for higher floors)
+// drawBackground just blits the visible slice of each scene.
+
+const FLOORS_PER_SCENE = 20;
+let sceneCanvases = [null, null, null]; // [city, cloud, space]
+let lastBgSig = '';
+
+function ensureSceneCanvases(w){
+  const sig = w + ':' + CELL;
+  if(sig === lastBgSig && sceneCanvases[0]) return;
+  lastBgSig = sig;
+  const sceneH = FLOORS_PER_SCENE * CELL;
+  // City
+  sceneCanvases[0] = renderCity(w, sceneH);
+  // Cloud
+  sceneCanvases[1] = renderCloud(w, sceneH);
+  // Space
+  sceneCanvases[2] = renderSpace(w, sceneH);
+}
+
+function makeOffscreen(w, h){
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  return cv;
+}
+
+// City: floor 1 at bottom (worldY=0 inside scene canvas → canvas bottom)
+function renderCity(w, h){
+  const cv = makeOffscreen(w, h);
+  const ctx = cv.getContext('2d');
+  // Sky gradient: dawn at bottom warming to lighter blue toward top
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#9DC4E8');    // top of scene (floor 20) — daylight sky
+  g.addColorStop(0.4, '#F5C58E');
+  g.addColorStop(0.75, '#F2A678');
+  g.addColorStop(1, '#D4865F');    // bottom (floor 1) — warm horizon
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+
+  // Sun in upper area
+  ctx.fillStyle = 'rgba(255,225,160,0.85)';
+  ctx.beginPath(); ctx.arc(w*0.78, h*0.18, 16, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,225,160,0.3)';
+  ctx.beginPath(); ctx.arc(w*0.78, h*0.18, 26, 0, Math.PI*2); ctx.fill();
+
+  // Buildings: drawn at canvas BOTTOM, with varying heights up the canvas
+  // Two parallax rows
+  const rows = [
+    { color: '#7B5A4D', count: 9, hMin: 60, hMax: 180 },
+    { color: '#4A3328', count: 7, hMin: 100, hMax: 280 },
+  ];
+  for(const row of rows){
+    const colW = w / row.count;
+    for(let i=0; i<row.count; i++){
+      const seed = Math.sin(i*12.9898 + row.count*7.1) * 43758.5453;
+      const r = seed - Math.floor(seed);
+      const bh = row.hMin + r * (row.hMax - row.hMin);
+      const bx = i * colW + colW * 0.08;
+      const bw = colW * 0.84;
+      const by = h - bh;
+      ctx.fillStyle = row.color;
+      ctx.fillRect(bx, by, bw, bh);
+      // Roof detail
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.fillRect(bx, by, bw, 3);
+      // Windows
+      ctx.fillStyle = 'rgba(255,210,130,0.7)';
+      for(let wy=10; wy<bh-6; wy+=10){
+        for(let wx=4; wx<bw-4; wx+=8){
+          if((wx+wy+i*3)%17 < 11) ctx.fillRect(bx+wx, by+wy, 3, 4);
+        }
+      }
+    }
+  }
+  // Ground line (floor 1 reference)
+  ctx.fillStyle = 'rgba(40,25,15,0.4)';
+  ctx.fillRect(0, h-2, w, 2);
+  return cv;
+}
+
+function renderCloud(w, h){
+  const cv = makeOffscreen(w, h);
+  const ctx = cv.getContext('2d');
+  // Sky: lighter at top (higher altitude), denser blue at bottom
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#7BB5D8');    // top — deeper blue (higher up)
+  g.addColorStop(1, '#C8E0EC');    // bottom — pale blue (just above city)
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+
+  // Clouds at fixed positions across the 20-floor band
+  const clouds = 18;
+  for(let i=0; i<clouds; i++){
+    const sx = (Math.sin(i*78.233)*43758.5453) % 1;
+    const sy = (Math.sin(i*17.4 + 3)*23421.1) % 1;
+    const rx = ((sx+1)%1) * w;
+    const ry = ((sy+1)%1) * h;
+    const cs = 16 + ((Math.sin(i*5.3)+1)*0.5) * 16;
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.beginPath();
+    ctx.arc(rx, ry, cs, 0, Math.PI*2);
+    ctx.arc(rx + cs*0.7, ry + 2, cs*0.85, 0, Math.PI*2);
+    ctx.arc(rx - cs*0.7, ry + 3, cs*0.75, 0, Math.PI*2);
+    ctx.arc(rx + cs*0.3, ry - cs*0.5, cs*0.65, 0, Math.PI*2);
+    ctx.fill();
+    // soft shadow underneath
+    ctx.fillStyle = 'rgba(180,200,220,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(rx, ry + cs*0.6, cs*1.2, cs*0.3, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+  return cv;
+}
+
+function renderSpace(w, h){
+  const cv = makeOffscreen(w, h);
+  const ctx = cv.getContext('2d');
+  // Deep space gradient
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#070620');
+  g.addColorStop(1, '#1A1450');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+
+  // Stars
+  for(let i=0; i<120; i++){
+    const sx = (Math.sin(i*12.9898 + 1.3)*43758.5453) % 1;
+    const sy = (Math.sin(i*78.233 + 0.7)*12345.6) % 1;
+    const rx = ((sx+1)%1) * w;
+    const ry = ((sy+1)%1) * h;
+    const tw = ((Math.sin(i*1.7)+1)*0.5);
+    const sz = 1 + (Math.sin(i*3.1)+1)*0.4;
+    ctx.fillStyle = `rgba(255,255,255,${0.5 + tw*0.5})`;
+    ctx.fillRect(rx, ry, sz, sz);
+  }
+  // Nebula glow 1
+  const ng = ctx.createRadialGradient(w*0.7, h*0.3, 5, w*0.7, h*0.3, Math.max(80, h*0.18));
+  ng.addColorStop(0, 'rgba(180,120,220,0.4)');
+  ng.addColorStop(1, 'rgba(180,120,220,0)');
+  ctx.fillStyle = ng; ctx.fillRect(0, 0, w, h);
+  // Nebula glow 2
+  const ng2 = ctx.createRadialGradient(w*0.25, h*0.65, 5, w*0.25, h*0.65, Math.max(70, h*0.15));
+  ng2.addColorStop(0, 'rgba(80,180,220,0.35)');
+  ng2.addColorStop(1, 'rgba(80,180,220,0)');
+  ctx.fillStyle = ng2; ctx.fillRect(0, 0, w, h);
+  // Small planet
+  ctx.fillStyle = '#D4A574';
+  ctx.beginPath(); ctx.arc(w*0.85, h*0.7, 12, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(180,120,80,0.6)';
+  ctx.beginPath(); ctx.arc(w*0.85, h*0.7, 12, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.beginPath(); ctx.arc(w*0.82, h*0.68, 5, 0, Math.PI*2); ctx.fill();
+  return cv;
+}
+
+function drawBackground(ctx, w, h){
+  ensureSceneCanvases(w);
+  // World Y: 0 = floor 1 bottom. Each floor = CELL pixels going UP.
+  // Camera bottom worldY = (lowestVisibleFloor - 1) * CELL
+  const camY = (lowestVisibleFloor() - 1) * CELL;
+  const sceneH = FLOORS_PER_SCENE * CELL;
+  // Visible worldY range [camY, camY+h]
+  // For each scene index, scene occupies worldY [sceneIdx*sceneH, (sceneIdx+1)*sceneH]
+  // (space scene tiles upward indefinitely for higher floors)
+  // Convert worldY to canvasY: canvasY = h - (worldY - camY)
+
+  // We render at most 4 scene tiles: city, cloud, then space possibly tiled twice
+  const yTopWorld = camY + h;
+
+  // City + cloud (one each)
+  for(let sceneIdx=0; sceneIdx<2; sceneIdx++){
+    const sBotW = sceneIdx * sceneH;
+    const sTopW = (sceneIdx+1) * sceneH;
+    if(sTopW <= camY || sBotW >= yTopWorld) continue;
+    blitScene(ctx, sceneCanvases[sceneIdx], sBotW, sTopW, camY, h);
+  }
+  // Space scene, tile upward starting at sceneIdx=2
+  let sceneIdx = 2;
+  while(true){
+    const sBotW = sceneIdx * sceneH;
+    const sTopW = (sceneIdx+1) * sceneH;
+    if(sBotW >= yTopWorld) break;
+    if(sTopW > camY){
+      blitScene(ctx, sceneCanvases[2], sBotW, sTopW, camY, h);
+    }
+    sceneIdx++;
+    if(sceneIdx > 200) break; // safety
+  }
+}
+
+// Blit a scene canvas (which spans worldY [sBotW, sTopW]) to the screen.
+// Inside scene canvas: y=0 is TOP (worldY = sTopW), y=h_scene is BOTTOM (worldY = sBotW).
+function blitScene(ctx, sceneCanvas, sBotW, sTopW, camY, screenH){
+  const sceneCanvasH = sceneCanvas.height;
+  // Visible worldY range on screen: [camY, camY+screenH]
+  // Clamp to scene range
+  const visBotW = Math.max(camY, sBotW);
+  const visTopW = Math.min(camY + screenH, sTopW);
+  if(visTopW <= visBotW) return;
+  // In source canvas coords: srcY=0 is at worldY=sTopW
+  // srcY of visTopW = sTopW - visTopW
+  // srcY of visBotW = sTopW - visBotW
+  const srcYTop = sTopW - visTopW;
+  const srcH    = visTopW - visBotW;
+  // On screen: canvasY of visTopW = screenH - (visTopW - camY)
+  const dstY = screenH - (visTopW - camY);
+  ctx.drawImage(sceneCanvas, 0, srcYTop, sceneCanvas.width, srcH, 0, dstY, sceneCanvas.width, srcH);
+}
+
+// ── Grid render ───────────────────────────────────────────────────────────────
+function drawGrid(){
+  const w=gc.width,h=gc.height;
+  gctx.clearRect(0,0,w,h);
+  drawBackground(gctx,w,h);
+  const lowVis=lowestVisibleFloor(), visCount=visibleFloorCount();
+  // Solid base layer behind the grid so backgrounds (esp. dark space) don't bleed through.
+  gctx.fillStyle='rgba(253,248,242,0.88)';
+  gctx.fillRect(OFFSET_X,OFFSET_Y,GRID_W,GRID_H);
+  for(let floor=lowVis;floor<=unlockedFloors;floor++){
+    const cRow=floorToCanvasRow(floor),py=OFFSET_Y+cRow*CELL;
+    gctx.fillStyle=floor%2===0?'rgba(215,195,168,0.45)':'rgba(235,222,204,0.35)';
+    gctx.fillRect(OFFSET_X,py,GRID_W,CELL);
+  }
+  gctx.strokeStyle='rgba(155,125,90,0.7)';gctx.lineWidth=0.7;
+  for(let c=0;c<=COLS;c++){gctx.beginPath();gctx.moveTo(OFFSET_X+c*CELL,OFFSET_Y);gctx.lineTo(OFFSET_X+c*CELL,OFFSET_Y+GRID_H);gctx.stroke();}
+  for(let r=0;r<=visCount;r++){gctx.beginPath();gctx.moveTo(OFFSET_X,OFFSET_Y+r*CELL);gctx.lineTo(OFFSET_X+GRID_W,OFFSET_Y+r*CELL);gctx.stroke();}
+  gctx.strokeStyle='rgba(120,90,60,0.85)';gctx.lineWidth=2;gctx.strokeRect(OFFSET_X,OFFSET_Y,GRID_W,GRID_H);
+  // Highlight unfilled visible floors with a subtle green tint when a material is selected
+  if(selectedMat){
+    for(let f=lowVis;f<=unlockedFloors;f++){
+      if(getFloorFill(f)<5){
+        const cR=floorToCanvasRow(f),pY=OFFSET_Y+cR*CELL;
+        gctx.fillStyle='rgba(74,124,63,0.04)';
+        gctx.fillRect(OFFSET_X,pY,GRID_W,CELL);
+      }
+    }
+  }
+  for(let floor=lowVis;floor<=unlockedFloors;floor++){
+    const cRow=floorToCanvasRow(floor),wRow=floorToWorldRow(floor),py=OFFSET_Y+cRow*CELL;
+    for(let col=0;col<COLS;col++){const mat=grid[col][wRow];if(mat) drawCell(gctx,OFFSET_X+col*CELL,py,CELL,mat);}
+  }
+  if(hoverCol>=0&&hoverRow>=0&&selectedMat&&!gameOver){
+    const floor=canvasRowToFloor(hoverRow);
+    if(floorIsVisible(floor)&&!grid[hoverCol][floorToWorldRow(floor)])
+      drawCell(gctx,OFFSET_X+hoverCol*CELL,OFFSET_Y+hoverRow*CELL,CELL,selectedMat,0.38);
+  }
+}
+
+// ── Overlay anim ──────────────────────────────────────────────────────────────
+function drawOverlay(){
+  octx.clearRect(0,0,oc.width,oc.height);
+  overlayAnims=overlayAnims.filter(a=>a.t<a.maxT);
+  for(const anim of overlayAnims){
+    const progress=anim.t/anim.maxT;
+    for(const [col,floor] of anim.cells){
+      if(!floorIsVisible(floor)) continue;
+      const cRow=floorToCanvasRow(floor);
+      const px=OFFSET_X+col*CELL,py=OFFSET_Y+cRow*CELL;
+      const alpha=progress<0.3?progress/0.3:1-(progress-0.3)/0.7;
+      octx.save();octx.globalAlpha=alpha*0.8;octx.strokeStyle=anim.color;octx.lineWidth=3;
+      roundRect(octx,px+2,py+2,CELL-4,CELL-4,4);octx.stroke();
+      octx.globalAlpha=alpha*0.22;octx.fillStyle=anim.color;
+      roundRect(octx,px+2,py+2,CELL-4,CELL-4,4);octx.fill();
+      octx.restore();
+    }
+    anim.t++;
+  }
+}
+
+// ── Input ─────────────────────────────────────────────────────────────────────
+function onMouseMove(e){
+  const r=gc.getBoundingClientRect();
+  const pos=canvasToGrid((e.clientX-r.left)*(gc.width/r.width),(e.clientY-r.top)*(gc.height/r.height));
+  if(pos){hoverCol=pos.col;hoverRow=pos.cRow;}else{hoverCol=-1;hoverRow=-1;}
+}
+function onTouch(e){
+  e.preventDefault();const r=gc.getBoundingClientRect();const t=e.changedTouches[0];
+  const pos=canvasToGrid((t.clientX-r.left)*(gc.width/r.width),(t.clientY-r.top)*(gc.height/r.height));
+  if(pos) placeTile(pos.col,pos.floor);
+}
+function onGridClick(e){
+  const r=gc.getBoundingClientRect();
+  const pos=canvasToGrid((e.clientX-r.left)*(gc.width/r.width),(e.clientY-r.top)*(gc.height/r.height));
+  if(pos) placeTile(pos.col,pos.floor);
+}
+function selectMat(key){
+  if(inventory[key]<=0) return;
+  selectedMat=selectedMat===key?null:key;
+  MAT_KEYS.forEach(k=>document.getElementById('btn-'+k).classList.toggle('selected',selectedMat===k));
+  updateHint();
+}
+
+// ── Placement ─────────────────────────────────────────────────────────────────
+function placeTile(col,floor){
+  if(gameOver) return;
+  if(!selectedMat){showToast('Chọn nguyên liệu trước!');return;}
+  if(inventory[selectedMat]<=0){showToast('Hết '+MAT[selectedMat].name+'!');return;}
+  if(col<0||col>=COLS) return;
+  if(!floorIsVisible(floor)){showToast(floor<lowestVisibleFloor()?'Tầng này đã đóng!':'Tầng này chưa mở khoá!');return;}
+  const wRow=floorToWorldRow(floor);
+  if(grid[col][wRow]){showToast('Ô này đã có gạch!');return;}
+  grid[col][wRow]=selectedMat;
+  inventory[selectedMat]--;
+  updateInventoryUI();
+  checkQuestsOnPlacement(col,floor,selectedMat);
+  checkFloorCompletion();
+  if(inventory.gach+inventory.go+inventory.tre===0){triggerGameOver();return;}
+  if(inventory[selectedMat]<=0){selectedMat=null;MAT_KEYS.forEach(k=>document.getElementById('btn-'+k).classList.remove('selected'));}
+  updateHint();
+}
+
+// ── Shape detection ───────────────────────────────────────────────────────────
+// Try to fit a shape onto the grid such that one of its cells lands at
+// (placeCol, placeFloor) and all shape cells exist on grid with the given mat.
+// Shape coords: (sx, sy) with sy=0 at TOP. Grid floor=1 is BOTTOM.
+// Returns array of [col, floor] cells if fit found, else null.
+function tryFitShape(shapeCells, placeCol, placeFloor, mat){
+  for(const [ax, ay] of shapeCells){
+    // Anchor: shape cell (ax, ay) maps to grid (placeCol, placeFloor)
+    const fitCells=[];
+    let ok=true;
+    for(const [sx, sy] of shapeCells){
+      const tCol = sx + (placeCol - ax);
+      // Shape sy increases DOWN, grid floor increases UP → invert
+      const tFloor = (ay - sy) + placeFloor;
+      if(tCol<0 || tCol>=COLS || tFloor<1 || tFloor>unlockedFloors){ok=false;break;}
+      if(grid[tCol][floorToWorldRow(tFloor)] !== mat){ok=false;break;}
+      fitCells.push([tCol, tFloor]);
+    }
+    if(ok) return fitCells;
+  }
+  return null;
+}
+
+// ── Quest logic ───────────────────────────────────────────────────────────────
+function generateQuests(count){
+  // count: how many slots to fill (2 or 3)
+  questCount=count;
+  quests=[];
+  for(let i=0;i<3;i++) quests.push(i<count?genOneQuest():null);
+  renderQuestUI();
+}
+
+// Shape pools split for weighted random:
+//   Diagonals: 35% chance (4 shapes, picked uniformly among them)
+//   Tetris:    65% chance (19 shapes, picked uniformly among them)
+function pickShape(){
+  const diagonals = SHAPES.filter(s => s.name.startsWith('Diag'));
+  const tetris    = SHAPES.filter(s => !s.name.startsWith('Diag'));
+  const pool = Math.random() < 0.35 ? diagonals : tetris;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function genOneQuest(){
+  const shape=pickShape();
+  const mat=MAT_KEYS[Math.floor(Math.random()*MAT_KEYS.length)];
+  const shuffled=[...MAT_KEYS].sort(()=>Math.random()-0.5).slice(0,2);
+  const reward={};shuffled.forEach(k=>{reward[k]=1+Math.floor(Math.random()*3);});
+  return {shape,mat,reward,done:false};
+}
+
+// [3] Reset quests button: 5 uses max, 80% → 2 quests, 20% → 3 quests
+function resetQuests(){
+  if(questResetsLeft<=0){showToast('Hết lượt reset nhiệm vụ!');return;}
+  questResetsLeft--;
+  const newCount=Math.random()<0.2?3:2;
+  generateQuests(newCount);
+  updateQuestResetBtn();
+  showToast(newCount===3?'🎉 May mắn! 3 nhiệm vụ mới!':'🔀 Đã reset nhiệm vụ (còn '+questResetsLeft+' lần)');
+}
+
+function updateQuestResetBtn(){
+  const btn=document.getElementById('btn-quest-reset');
+  const cnt=document.getElementById('quest-reset-count');
+  cnt.textContent='Còn '+questResetsLeft+' lần';
+  btn.classList.toggle('depleted',questResetsLeft<=0);
+}
+
+function checkQuestsOnPlacement(col,floor,mat){
+  for(let i=0;i<quests.length;i++){
+    const q=quests[i];
+    if(!q||q.done||q.mat!==mat) continue;
+    const fit=tryFitShape(q.shape.cells, col, floor, mat);
+    if(!fit) continue;
+    q.done=true;
+    const rewardStr=Object.entries(q.reward).map(([k,v])=>'+'+v+' '+MAT[k].name).join(', ');
+    showToast('✅ Quest xong! '+rewardStr);
+    Object.entries(q.reward).forEach(([k,v])=>{inventory[k]=Math.min(99,inventory[k]+v);});
+    updateInventoryUI();
+    overlayAnims.push({cells:fit,color:MAT[mat].light,t:0,maxT:45});
+    // Animation sequence: green highlight → fade out → swap quest → fade in
+    const idx=i;
+    renderQuestUI(); // shows green "done" state immediately
+    setTimeout(()=>{
+      // fade out
+      const el=document.getElementById('quest-'+idx);
+      if(el) el.classList.add('fading');
+    }, 650);
+    setTimeout(()=>{
+      // swap to new quest (starts hidden via fading), then fade in
+      quests[idx]=genOneQuest();
+      renderQuestUI();
+      const el=document.getElementById('quest-'+idx);
+      if(el){
+        el.classList.add('fading'); // start invisible
+        // force reflow so transition triggers
+        void el.offsetWidth;
+        el.classList.remove('fading');
+      }
+    }, 1050);
+  }
+  recalcScore();
+}
+
+function renderQuestUI(){
+  for(let i=0;i<3;i++){
+    const q=quests[i];
+    const el=document.getElementById('quest-'+i);
+    // [2] hide slot if quest is null (only 2 active)
+    if(!q){el.className='quest-card hidden';el.innerHTML='';continue;}
+    el.className='quest-card'+(q.done?' done':'');
+    const m=MAT[q.mat];
+    const cells=q.shape.cells;
+    const maxC=Math.max(...cells.map(([c])=>c))+1;
+    const maxR=Math.max(...cells.map(([,r])=>r))+1;
+    const cellSet=new Set(cells.map(([c,r])=>c+','+r));
+    let prev='<div class="quest-preview">';
+    for(let r=0;r<maxR;r++){
+      prev+='<div class="quest-row">';
+      for(let c=0;c<maxC;c++){
+        const f=cellSet.has(c+','+r);
+        prev+=`<div class="quest-cell ${f?'filled':''}" style="${f?'background:'+m.color+';border-color:'+m.stroke:''}"></div>`;
+      }
+      prev+='</div>';
+    }
+    prev+='</div>';
+    const rwdHTML=Object.entries(q.reward)
+      .map(([k,v])=>`<span class="reward-row"><span style="color:#3D2B1F;font-weight:700">+${v}</span><span class="reward-icon" data-mat="${k}"></span></span>`)
+      .join('');
+    el.innerHTML=`
+      <div style="font-size:11px;color:${m.color};font-weight:700;line-height:1.2;margin-top:2px">${m.house}</div>
+      ${prev}
+      <div class="quest-divider"></div>
+      <div class="quest-reward-label">Thưởng</div>
+      <div class="quest-reward">${rwdHTML}</div>`;
+  }
+}
+
+// ── Floor logic ───────────────────────────────────────────────────────────────
+function getFloorFill(floor){
+  const wRow=floorToWorldRow(floor);let n=0;
+  for(let c=0;c<COLS;c++) if(grid[c][wRow]) n++;
+  return n;
+}
+function checkFloorCompletion(){
+  recalcScore();
+  // Unlock a new floor when the topmost unlocked floor first reaches >=3 fill.
+  const topFill=getFloorFill(unlockedFloors);
+  if(topFill>=3){
+    totalFloorsCompleted=Math.max(totalFloorsCompleted,unlockedFloors);
+    unlockedFloors++;
+    currentFloor=unlockedFloors;
+    resizeCanvases();
+    showToast('🏗️ Mở khoá Tầng '+unlockedFloors+'!');
+    document.getElementById('floor-val').textContent=unlockedFloors;
+  }
+}
+function recalcScore(){
+  let s=0;
+  for(let floor=1;floor<=unlockedFloors;floor++){
+    const wRow=floorToWorldRow(floor);let n=0;
+    for(let c=0;c<COLS;c++) if(grid[c]&&grid[c][wRow]) n++;
+    s+=n*floor;
+  }
+  score=s;updateScoreUI();
+}
+
+// ── UI ────────────────────────────────────────────────────────────────────────
+function updateScoreUI(){document.getElementById('score-val').textContent=score;}
+function updateInventoryUI(){
+  MAT_KEYS.forEach(k=>{
+    document.getElementById('count-'+k).textContent=inventory[k];
+    document.getElementById('btn-'+k).classList.toggle('empty',inventory[k]<=0);
+  });
+}
+function updateHint(){
+  document.getElementById('hint').textContent=
+    selectedMat?`Đặt ${MAT[selectedMat].name} — click ô trống bất kỳ`:'Chọn nguyên liệu → click ô để đặt';
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ── Game over ─────────────────────────────────────────────────────────────────
+function triggerGameOver(){
+  gameOver=true;
+  document.getElementById('go-score').textContent=score;
+  document.getElementById('go-floors').textContent=totalFloorsCompleted;
+  document.getElementById('gameover').classList.add('show');
+}
+function restartGame(){
+  MAT_KEYS.forEach(k=>document.getElementById('btn-'+k).classList.remove('selected'));
+  document.getElementById('gameover').classList.remove('show');
+  initState();
+}
+
+// ── Loop ──────────────────────────────────────────────────────────────────────
+function gameLoop(){drawGrid();drawOverlay();requestAnimationFrame(gameLoop);}
+window.addEventListener('load',boot);
+</script>
+</body>
+</html>

@@ -39,5 +39,15 @@
     "mechanic": "Match-3 / Cooking",
     "path": "games/matchcooking/index.html",
     "added": "2026-06-14"
+  },
+  {
+    "id": "cloudscrapers",
+    "title": "Cloudscrapers",
+    "description": "Xếp chồng các tòa nhà để xây tháp cao vút lên mây. Mechanic: stacking & timing.",
+    "description_en": "Stack buildings on top of each other to raise a tower up into the clouds. Mechanic: stacking & timing.",
+    "description_zh": "将建筑层层叠起，把塔楼堆向云端。机制：堆叠与节奏。",
+    "mechanic": "Stacking / Timing",
+    "path": "games/cloudscrapers/index.html",
+    "added": "2026-06-19"
   }
 ]
