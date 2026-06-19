@@ -796,9 +796,21 @@ function pickShape(){
 function genOneQuest(){
   const shape=pickShape();
   const mat=MAT_KEYS[Math.floor(Math.random()*MAT_KEYS.length)];
-  const shuffled=[...MAT_KEYS].sort(()=>Math.random()-0.5).slice(0,2);
-  const reward={};shuffled.forEach(k=>{reward[k]=1+Math.floor(Math.random()*3);});
+  const reward=generateReward();
   return {shape,mat,reward,done:false};
+}
+
+// Reward generation:
+//   Number of reward materials:  1 type → 40%,  2 types → 60%
+//   Quantity per material:        1 unit → 75%, 2 units → 25%
+function generateReward(){
+  const numTypes = Math.random() < 0.40 ? 1 : 2;
+  const shuffled = [...MAT_KEYS].sort(()=>Math.random()-0.5).slice(0, numTypes);
+  const reward = {};
+  shuffled.forEach(k => {
+    reward[k] = Math.random() < 0.75 ? 1 : 2;
+  });
+  return reward;
 }
 
 // [3] Reset quests button: 5 uses max, 80% → 2 quests, 20% → 3 quests
