@@ -68,33 +68,33 @@ html,body{height:100%;overflow:hidden;background:#EDE0CC;font-family:system-ui,-
 
 /* ── Playfield ── */
 #field-wrap{flex:1;min-width:0;display:flex;flex-direction:column}
-#playfield{flex:1;position:relative;min-height:0}
-#grid-canvas{display:block;width:100%;height:100%;border-radius:8px;border:1.5px solid #D4C0A4}
-#overlay-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:8px}
+#playfield{flex:1;position:relative;min-height:0;border-radius:8px;overflow:hidden;border:1.5px solid #D4C0A4}
+#grid-canvas{display:block;width:100%;height:100%}
+#overlay-canvas{position:absolute;top:0;left:0;pointer-events:none}
 
 /* ── Bottom row: full width under playfield ── */
-#bottom-row{display:flex;gap:6px;align-items:stretch}
+#bottom-row{display:flex;gap:6px;align-items:stretch;justify-content:center}
 
 /* Reset game button — same half-size as mat-btn, left side */
 #btn-reset{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   background:#fff;border:2px solid #D4C0A4;border-radius:6px;
-  cursor:pointer;font-family:inherit;flex-shrink:0;
+  cursor:pointer;font-family:inherit;
   box-shadow:0 1px 3px rgba(0,0,0,0.05);color:#9A7A60;
   transition:border-color .12s,background .12s;
-  aspect-ratio:1/1;padding:6px;width:97px;
+  aspect-ratio:1/1;padding:4px;flex:1;min-width:0;max-width:100px;
 }
 #btn-reset:hover{background:#FFF0EE;border-color:#C0392B;color:#C0392B}
 #btn-reset .reset-icon{font-size:28px;line-height:1}
 #btn-reset .reset-label{font-size:11px;font-weight:600;letter-spacing:0.3px}
 
 /* Inventory — square mat buttons, half-size */
-#inventory{display:flex;gap:8px;justify-content:flex-end;flex:1}
+#inventory{display:flex;gap:6px;flex:3;min-width:0}
 .mat-btn{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   background:#fff;border:2px solid #D4C0A4;border-radius:6px;
   cursor:pointer;transition:border-color .12s,background .12s;
-  aspect-ratio:1/1;width:108px;
+  aspect-ratio:1/1;flex:1;min-width:0;max-width:108px;
   box-shadow:0 1px 3px rgba(0,0,0,0.05);
   padding:3px;
 }
@@ -302,16 +302,23 @@ function initState(){
 
 function resizeCanvases(){
   const pf=document.getElementById('playfield');
-  const w=pf.clientWidth||220, h=pf.clientHeight||360;
-  gc.width=w; gc.height=h; oc.width=w; oc.height=h;
+  const wAvail=pf.clientWidth||220, hAvail=pf.clientHeight||360;
   const vis=visibleFloorCount();
-  // Reserve breathing room inside canvas (horizontal padding) so grid doesn't kiss the border
   const SIDE_PAD=20;
-  const usableW=w-SIDE_PAD*2;
-  CELL=Math.floor(Math.min(usableW/COLS, h/Math.max(1,vis)));
+  const usableW=wAvail-SIDE_PAD*2;
+  // Max CELL prevents huge stretching when few floors visible on tall PC screens
+  const MAX_CELL=64;
+  CELL=Math.floor(Math.min(usableW/COLS, hAvail/Math.max(1,vis), MAX_CELL));
   GRID_W=CELL*COLS; GRID_H=CELL*vis;
-  OFFSET_X=Math.floor((w-GRID_W)/2);
-  OFFSET_Y=h-GRID_H;
+  // Canvas fills entire playfield — background covers all, grid drawn at bottom
+  gc.width=wAvail; gc.height=hAvail;
+  oc.width=wAvail; oc.height=hAvail;
+  gc.style.width=wAvail+'px'; gc.style.height=hAvail+'px';
+  oc.style.width=wAvail+'px'; oc.style.height=hAvail+'px';
+  oc.style.left='0px'; oc.style.top='0px';
+  // Grid centered horizontally, anchored to bottom
+  OFFSET_X=Math.floor((wAvail-GRID_W)/2);
+  OFFSET_Y=hAvail-GRID_H;
 }
 
 function canvasToGrid(cx,cy){
@@ -745,12 +752,18 @@ function generateQuests(count){
 }
 
 // Shape pools split for weighted random:
-//   Diagonals: 35% chance (4 shapes, picked uniformly among them)
-//   Tetris:    65% chance (19 shapes, picked uniformly among them)
+//   Tetris (19 shapes): 70%  — picked uniformly among them
+//   Diag3  (2 shapes):  20%  — picked uniformly among them
+//   Diag4  (2 shapes):  10%  — picked uniformly among them
 function pickShape(){
-  const diagonals = SHAPES.filter(s => s.name.startsWith('Diag'));
-  const tetris    = SHAPES.filter(s => !s.name.startsWith('Diag'));
-  const pool = Math.random() < 0.35 ? diagonals : tetris;
+  const tetris = SHAPES.filter(s => !s.name.startsWith('Diag'));
+  const diag3  = SHAPES.filter(s => s.name.startsWith('Diag3'));
+  const diag4  = SHAPES.filter(s => s.name.startsWith('Diag4'));
+  const r = Math.random();
+  let pool;
+  if(r < 0.70) pool = tetris;        // 0.00 – 0.70  → 70%
+  else if(r < 0.90) pool = diag3;    // 0.70 – 0.90  → 20%
+  else pool = diag4;                  // 0.90 – 1.00  → 10%
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
