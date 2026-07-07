@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Color Matcher Online PvP</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- MENU VIEW -->
+  <section id="view-menu" class="view active">
+    <h1>Color Matcher <span class="pvp-tag">PvP</span></h1>
+    <input id="input-name" type="text" placeholder="Tên của bạn" maxlength="16" />
+
+    <div class="menu-box">
+      <button id="btn-create-room">Tạo phòng</button>
+    </div>
+
+    <div class="menu-box">
+      <input id="input-room-code" type="text" placeholder="Mã phòng" maxlength="8" />
+      <button id="btn-join-room">Vào phòng</button>
+    </div>
+
+    <p id="menu-error" class="error-text"></p>
+  </section>
+
+  <!-- WAITING VIEW -->
+  <section id="view-waiting" class="view">
+    <h2>Đang đợi đối thủ...</h2>
+    <p>Mã phòng của bạn:</p>
+    <div id="waiting-room-code" class="room-code"></div>
+    <p class="hint">Gửi mã này cho bạn bè để họ vào phòng.</p>
+  </section>
+
+  <!-- MEMORIZE VIEW (Phase 1) -->
+  <section id="view-memorize" class="view">
+    <p class="round-label">Câu <span id="memorize-round">1</span>/5</p>
+    <p class="phase-label">Ghi nhớ màu sắc!</p>
+    <div class="progress-bar-track">
+      <div id="memorize-progress" class="progress-bar-fill"></div>
+    </div>
+    <div id="memorize-target" class="color-box-large"></div>
+  </section>
+
+  <!-- GUESS VIEW (Phase 2) -->
+  <section id="view-guess" class="view">
+    <p class="round-label">Câu <span id="guess-round">1</span>/5</p>
+    <div class="progress-bar-track">
+      <div id="guess-progress" class="progress-bar-fill guess-fill"></div>
+    </div>
+
+    <div class="guess-layout">
+      <div class="guess-preview-col">
+        <p>Màu bạn đang chọn:</p>
+        <div id="guess-preview" class="color-box-medium"></div>
+        <p id="guess-hex" class="hex-label">#888888</p>
+        <button id="btn-submit-color">Nộp bài</button>
+        <p id="guess-waiting-text" class="hint hidden">Đang đợi đối thủ nộp bài...</p>
+      </div>
+      <div class="guess-picker-col">
+        <div id="picker-container"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROUND RESULT VIEW -->
+  <section id="view-result" class="view">
+    <p class="round-label">Kết quả câu <span id="result-round">1</span>/5</p>
+    <div class="result-target-row">
+      <p>Màu mục tiêu</p>
+      <div id="result-target-box" class="color-box-medium"></div>
+    </div>
+
+    <div class="result-compare-row">
+      <div class="result-player-col">
+        <p id="result-p1-name">Bạn</p>
+        <div id="result-p1-box" class="color-box-medium"></div>
+        <p id="result-p1-score" class="score-text">0.00%</p>
+      </div>
+      <div class="result-player-col">
+        <p id="result-p2-name">Đối thủ</p>
+        <div id="result-p2-box" class="color-box-medium"></div>
+        <p id="result-p2-score" class="score-text">0.00%</p>
+      </div>
+    </div>
+    <p class="hint">Vòng tiếp theo sẽ bắt đầu sau vài giây...</p>
+  </section>
+
+  <!-- SUMMARY VIEW -->
+  <section id="view-summary" class="view">
+    <h2 id="summary-title">BẠN THẮNG!</h2>
+    <table class="summary-table">
+      <thead>
+        <tr><th>Người chơi</th><th>Tổng điểm</th></tr>
+      </thead>
+      <tbody id="summary-table-body"></tbody>
+    </table>
+    <button id="btn-rematch">Chơi lại</button>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5.5.2/dist/iro.min.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
