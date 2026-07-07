@@ -225,6 +225,7 @@ function renderPlayingState(room) {
       setupPicker();
       document.getElementById('guess-waiting-text').classList.add('hidden');
       document.getElementById('btn-submit-color').disabled = false;
+      document.getElementById('guess-hex').disabled = false;
     }
 
     showView('guess');
@@ -236,6 +237,7 @@ function renderPlayingState(room) {
 
     if (submissionsThisRound[myUid]) {
       document.getElementById('btn-submit-color').disabled = true;
+      document.getElementById('guess-hex').disabled = true;
       document.getElementById('guess-waiting-text').classList.remove('hidden');
     }
 
@@ -402,7 +404,11 @@ function setupPicker() {
   picker = new iro.ColorPicker(container, {
     width: 220,
     color: '#888888',
-    layout: [{ component: iro.ui.Box }, { component: iro.ui.Slider, options: { sliderType: 'value' } }],
+    layout: [
+      { component: iro.ui.Box },
+      { component: iro.ui.Slider, options: { sliderType: 'hue' } },
+      { component: iro.ui.Slider, options: { sliderType: 'value' } },
+    ],
   });
   picker.on('color:change', (color) => {
     currentColor = color.hexString;
@@ -412,13 +418,27 @@ function setupPicker() {
 
 function updatePreview(hex) {
   document.getElementById('guess-preview').style.background = hex;
-  document.getElementById('guess-hex').textContent = hex.toUpperCase();
+  const hexInput = document.getElementById('guess-hex');
+  if (document.activeElement !== hexInput) {
+    hexInput.value = hex.toUpperCase();
+  }
 }
+
+document.getElementById('guess-hex').addEventListener('input', (e) => {
+  const raw = e.target.value.trim();
+  const hex = raw.startsWith('#') ? raw : '#' + raw;
+  if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+    currentColor = hex;
+    document.getElementById('guess-preview').style.background = hex;
+    if (picker) picker.color.hexString = hex;
+  }
+});
 
 document.getElementById('btn-submit-color').addEventListener('click', async () => {
   if (hasSubmitted || !currentRoom) return;
   hasSubmitted = true;
   document.getElementById('btn-submit-color').disabled = true;
+  document.getElementById('guess-hex').disabled = true;
   document.getElementById('guess-waiting-text').classList.remove('hidden');
   await update(ref(db, `rooms/${roomId}`), {
     [`submissions/${currentRoom.round}/${myUid}`]: currentColor,

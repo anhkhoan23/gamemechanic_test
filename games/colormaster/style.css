@@ -169,6 +169,22 @@ button:disabled {
   letter-spacing: 1px;
 }
 
+.hex-input {
+  background: #1f2028;
+  border: 1px solid #3a3b44;
+  border-radius: 6px;
+  color: #f2f2f2;
+  text-align: center;
+  width: 140px;
+  padding: 8px 0;
+  text-transform: uppercase;
+}
+
+.hex-input:focus {
+  outline: none;
+  border-color: #ff5733;
+}
+
 .result-target-row,
 .result-compare-row {
   display: flex;
