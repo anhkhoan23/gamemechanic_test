@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Rune Clash PvP</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- MENU VIEW -->
+  <section id="view-menu" class="view active">
+    <h1>Rune Clash <span class="pvp-tag">PvP</span></h1>
+    <input id="input-name" type="text" placeholder="Tên của bạn" maxlength="16" />
+
+    <div class="menu-box">
+      <button id="btn-create-room">Tạo phòng</button>
+    </div>
+
+    <div class="menu-box">
+      <input id="input-room-code" type="text" placeholder="Mã phòng" maxlength="8" />
+      <button id="btn-join-room">Vào phòng</button>
+    </div>
+
+    <p id="menu-error" class="error-text"></p>
+  </section>
+
+  <!-- WAITING VIEW -->
+  <section id="view-waiting" class="view">
+    <h2>Đang đợi đối thủ...</h2>
+    <p>Mã phòng của bạn:</p>
+    <div id="waiting-room-code" class="room-code"></div>
+    <p class="hint">Gửi mã này cho bạn bè để họ vào phòng.</p>
+  </section>
+
+  <!-- DRAW VIEW (mỗi lượt) -->
+  <section id="view-draw" class="view">
+    <p class="round-label">Lượt <span id="draw-turn">1</span></p>
+
+    <div class="hp-mana-row">
+      <div class="hp-mana-col">
+        <p class="player-tag" id="my-name">Bạn</p>
+        <div class="bar-track hp-track"><div id="my-hp-fill" class="bar-fill hp-fill"></div></div>
+        <p class="bar-text" id="my-hp-text">100/100</p>
+        <div class="bar-track mana-track"><div id="my-mana-fill" class="bar-fill mana-fill"></div></div>
+      </div>
+      <div class="hp-mana-col">
+        <p class="player-tag" id="opp-name">Đối thủ</p>
+        <div class="bar-track hp-track"><div id="opp-hp-fill" class="bar-fill hp-fill"></div></div>
+        <p class="bar-text" id="opp-hp-text">100/100</p>
+        <div class="bar-track mana-track"><div id="opp-mana-fill" class="bar-fill mana-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="progress-bar-track">
+      <div id="draw-progress" class="progress-bar-fill"></div>
+    </div>
+    <p class="hint">Vẽ 1 nét liên tục: tam giác = Tấn công, vuông = Phòng thủ, tròn = Đa dụng</p>
+
+    <canvas id="draw-canvas" class="draw-canvas"></canvas>
+
+    <p id="mana-cost-preview" class="hint"></p>
+    <p id="mana-warning" class="error-text"></p>
+
+    <button id="btn-submit-rune" disabled>Xác nhận</button>
+    <p id="draw-waiting-text" class="hint hidden">Đang đợi đối thủ...</p>
+  </section>
+
+  <!-- RESULT VIEW -->
+  <section id="view-result" class="view">
+    <p class="round-label">Kết quả lượt <span id="result-turn">1</span></p>
+
+    <div class="result-compare-row">
+      <div class="result-player-col">
+        <p id="result-my-name">Bạn</p>
+        <canvas id="result-my-canvas" class="replay-canvas"></canvas>
+        <p class="result-label" id="result-my-label"></p>
+        <p class="result-effect" id="result-my-effect"></p>
+      </div>
+      <div class="result-player-col">
+        <p id="result-opp-name">Đối thủ</p>
+        <canvas id="result-opp-canvas" class="replay-canvas"></canvas>
+        <p class="result-label" id="result-opp-label"></p>
+        <p class="result-effect" id="result-opp-effect"></p>
+      </div>
+    </div>
+
+    <div class="progress-bar-track">
+      <div id="result-progress" class="progress-bar-fill guess-fill"></div>
+    </div>
+    <p class="hint">Lượt tiếp theo sẽ bắt đầu sau vài giây...</p>
+  </section>
+
+  <!-- SUMMARY VIEW -->
+  <section id="view-summary" class="view">
+    <h2 id="summary-title">BẠN THẮNG!</h2>
+    <div class="result-compare-row">
+      <div class="result-player-col">
+        <p>Bạn</p>
+        <p class="score-text" id="summary-my-hp">0/100</p>
+      </div>
+      <div class="result-player-col">
+        <p>Đối thủ</p>
+        <p class="score-text" id="summary-opp-hp">0/100</p>
+      </div>
+    </div>
+    <button id="btn-rematch">Chơi lại</button>
+  </section>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

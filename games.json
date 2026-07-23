@@ -59,5 +59,15 @@
     "mechanic": "Memory / Real-time PvP",
     "path": "games/colormaster/index.html",
     "added": "2026-07-07"
+  },
+  {
+    "id": "rune",
+    "title": "Rune Clash PvP",
+    "description": "Vẽ 1 nét để tạo rune: tam giác = tấn công, vuông = phòng thủ, tròn = đa dụng. Đối đầu thời gian thực, quản lý HP và mana. Mechanic: nhận dạng nét vẽ & PvP.",
+    "description_en": "Draw a single stroke to cast a rune: triangle = attack, square = defense, circle = utility. Battle in real time while managing HP and mana. Mechanic: stroke recognition & real-time PvP.",
+    "description_zh": "画一笔生成符文：三角形=攻击，方形=防御，圆形=通用。实时对战并管理生命值与法力。机制：笔画识别与实时对战。",
+    "mechanic": "Drawing / Real-time PvP",
+    "path": "games/rune/index.html",
+    "added": "2026-07-23"
   }
 ]
