@@ -14,7 +14,7 @@ import {
   onDisconnect,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
-import { firebaseConfig } from "./firebase-config.js";
+import { firebaseConfig } from "../../firebase-config.js";
 import { recognize, RUNE_TEMPLATES, RUNE_LABELS } from "./recognizer.js";
 
 const app = initializeApp(firebaseConfig);
