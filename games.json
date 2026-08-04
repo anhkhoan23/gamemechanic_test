@@ -69,5 +69,15 @@
     "mechanic": "Drawing / Real-time PvP",
     "path": "games/rune/index.html",
     "added": "2026-07-23"
+  },
+  {
+    "id": "bloxcity",
+    "title": "City Block",
+    "description": "Xây tòa nhà theo kiểu Tower Bloxx, 200 người cùng phòng, xem toàn cảnh khu đô thị 3D real-time. Mechanic: stacking & massively multiplayer.",
+    "description_en": "Build your tower Tower-Bloxx style, 200 players in one room, watch the entire city grow in real-time 3D. Mechanic: stacking & massively multiplayer.",
+    "description_zh": "以Tower Bloxx方式建造你的大楼，200人同房，实时3D观看整座城市成长。机制：堆叠与大规模多人。",
+    "mechanic": "Stacking / Massively Multiplayer",
+    "path": "games/bloxcity/index.html",
+    "added": "2026-08-04"
   }
 ]

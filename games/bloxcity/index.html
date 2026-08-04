@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>City Block — Multiplayer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="blueprint-bg"></div>
+
+<!-- ===================== LOBBY ===================== -->
+<div id="lobby">
+  <div class="card">
+    <span class="stamp">Bản vẽ 01</span>
+    <h1 class="display">City Block</h1>
+    <p class="subtitle">Xây khu nhà của riêng bạn. 200 người, 1 khu đô thị, 10 phút.</p>
+
+    <label for="nameInput">Tên hiển thị</label>
+    <input type="text" id="nameInput" maxlength="16" placeholder="Nhập tên của bạn">
+
+    <button class="btn" id="createRoomBtn">Tạo phòng mới</button>
+
+    <div class="divider">hoặc</div>
+
+    <label for="codeInput">Mã phòng</label>
+    <input type="text" id="codeInput" class="code" maxlength="5" placeholder="ABCDE">
+    <button class="btn secondary" id="joinRoomBtn">Vào phòng</button>
+
+    <div class="error" id="lobbyError"></div>
+    <div class="hint">Mỗi phòng tồn tại 10 phút, tối đa 200 người xây cùng lúc.</div>
+  </div>
+</div>
+
+<!-- ===================== GAME ===================== -->
+<div id="game">
+  <div id="hud">
+    <div class="hud-group">
+      <div class="pill"><span class="label">Phòng</span><span class="mono" id="roomCodeDisplay">—</span></div>
+      <div class="pill"><span class="label">Còn</span><span id="timer" class="mono">10:00</span></div>
+    </div>
+    <button id="toggleModeBtn">Xem toàn cảnh ⤴</button>
+  </div>
+
+  <div id="endedBanner">Hết giờ xây! Bạn vẫn có thể xem toàn cảnh khu đô thị ở chế độ Observe.</div>
+  <div id="toast"></div>
+
+  <div id="buildScreen">
+    <canvas id="buildCanvas"></canvas>
+    <div id="dropHint">Chạm / bấm phím cách để thả khối</div>
+    <div id="floorCount"><b id="floorNum">0</b>tầng</div>
+  </div>
+
+  <div id="observeScreen" style="display:none;">
+    <div id="observeContainer"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
