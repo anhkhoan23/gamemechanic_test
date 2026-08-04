@@ -412,12 +412,7 @@ function initObserveScene(){
   ground.position.y = -0.02;
   scene.add(ground);
 
-  window.addEventListener("resize", () => {
-    if(!container.clientWidth) return;
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
-  });
+  window.addEventListener("resize", resizeObserve);
 
   requestAnimationFrame(observeLoop);
 }
@@ -491,12 +486,21 @@ function makeNameSprite(name){
 /* ============================================================
    TOGGLE BUILD / OBSERVE
    ============================================================ */
+function resizeObserve(){
+  const container = $("#observeContainer");
+  if(!container.clientWidth) return;
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+}
+
 function toggleMode(){
   if(state.mode === "build"){
     state.mode = "observe";
     $("#buildScreen").style.display = "none";
     $("#observeScreen").style.display = "block";
     $("#toggleModeBtn").textContent = "Về xây nhà ⤵";
+    resizeObserve();
   } else {
     state.mode = "build";
     $("#observeScreen").style.display = "none";
