@@ -6,7 +6,159 @@
 <title>City Block — Multiplayer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<style>
+  :root{
+    --bg: #0f1b2d;
+    --panel: #16283f;
+    --panel-2: #1c3049;
+    --grid-line: #24405f;
+    --accent: #f4b740;
+    --accent-dim: #c99530;
+    --text: #eae6da;
+    --text-dim: #93a3b8;
+    --danger: #c1553b;
+    --success: #5ea88a;
+    --radius: 10px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0; height:100%; width:100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    overflow: hidden;
+  }
+  .display{ font-family:'Space Grotesk', sans-serif; }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+
+  /* blueprint grid backdrop */
+  .blueprint-bg{
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 42px 42px;
+    opacity:0.35;
+    pointer-events:none;
+  }
+
+  /* ---------- LOBBY ---------- */
+  #lobby{
+    position:relative; z-index:1;
+    height:100%; display:flex; align-items:center; justify-content:center;
+    padding: 24px;
+  }
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--grid-line);
+    border-radius: var(--radius);
+    padding: 32px;
+    width: 100%; max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .stamp{
+    display:inline-block;
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    transform: rotate(-2deg);
+    margin-bottom: 14px;
+  }
+  h1.display{
+    font-size: 28px; margin: 0 0 6px 0; line-height:1.15;
+  }
+  p.subtitle{ color: var(--text-dim); font-size: 14px; margin: 0 0 24px 0; }
+
+  label{ display:block; font-size: 12px; color: var(--text-dim); margin: 16px 0 6px; text-transform: uppercase; letter-spacing:0.08em; }
+  input[type=text]{
+    width:100%; padding: 12px 14px;
+    background: var(--bg); border: 1px solid var(--grid-line);
+    border-radius: 6px; color: var(--text); font-size: 16px;
+    font-family: inherit;
+  }
+  input[type=text].code{ text-transform: uppercase; letter-spacing: 0.2em; font-family:'JetBrains Mono', monospace; }
+  input[type=text]:focus{ outline: none; border-color: var(--accent); }
+
+  .btn{
+    width:100%; padding: 13px 16px; margin-top: 20px;
+    background: var(--accent); color: #17242f; border:none;
+    border-radius: 6px; font-weight:600; font-size:15px; cursor:pointer;
+    font-family: inherit;
+    transition: transform 0.08s ease, background 0.15s ease;
+  }
+  .btn:hover{ background: #ffcb63; }
+  .btn:active{ transform: scale(0.98); }
+  .btn.secondary{ background: transparent; border: 1px solid var(--grid-line); color: var(--text); }
+  .btn.secondary:hover{ border-color: var(--accent); color: var(--accent); background:transparent; }
+  .btn:disabled{ opacity: 0.5; cursor:not-allowed; }
+
+  .divider{ display:flex; align-items:center; gap:12px; margin: 26px 0 6px; color: var(--text-dim); font-size:12px; text-transform:uppercase; letter-spacing:0.1em; }
+  .divider::before, .divider::after{ content:''; flex:1; height:1px; background: var(--grid-line); }
+
+  .hint{ font-size:12px; color: var(--text-dim); margin-top:10px; }
+  .error{ color: var(--danger); font-size: 13px; margin-top: 10px; min-height: 16px; }
+
+  /* ---------- GAME ---------- */
+  #game{ display:none; height:100%; position:relative; }
+  #hud{
+    position:absolute; top:0; left:0; right:0; z-index:10;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 18px;
+    background: linear-gradient(to bottom, rgba(15,27,45,0.92), rgba(15,27,45,0));
+    pointer-events:none;
+  }
+  #hud > *{ pointer-events:auto; }
+  .hud-group{ display:flex; align-items:center; gap:10px; }
+  .pill{
+    background: var(--panel); border:1px solid var(--grid-line);
+    border-radius: 20px; padding: 7px 14px; font-size:13px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .pill .label{ color: var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.06em; }
+  #timer{ font-size:16px; font-weight:700; }
+  #timer.low{ color: var(--danger); }
+  #toggleModeBtn{
+    background: var(--panel); border:1px solid var(--accent); color: var(--accent);
+    border-radius: 20px; padding: 8px 16px; font-size:13px; font-weight:600;
+    cursor:pointer; font-family:inherit;
+  }
+  #toggleModeBtn:hover{ background: rgba(244,183,64,0.12); }
+
+  #buildScreen, #observeScreen{ position:absolute; inset:0; }
+  #buildCanvas{ width:100%; height:100%; display:block; }
+  #observeContainer{ width:100%; height:100%; }
+
+  #dropHint{
+    position:absolute; bottom:26px; left:50%; transform:translateX(-50%);
+    color: var(--text-dim); font-size:13px; text-align:center; z-index:5;
+    pointer-events:none;
+  }
+  #floorCount{
+    position:absolute; bottom:26px; right:22px; z-index:5;
+    font-size: 13px; color: var(--text-dim);
+  }
+  #floorCount b{ color: var(--accent); font-size:20px; display:block; }
+
+  #toast{
+    position:absolute; top:70px; left:50%; transform:translateX(-50%);
+    background: var(--panel); border:1px solid var(--grid-line);
+    padding: 8px 16px; border-radius: 20px; font-size:13px;
+    opacity:0; transition: opacity 0.25s ease; z-index:20; pointer-events:none;
+    white-space:nowrap;
+  }
+  #toast.show{ opacity:1; }
+
+  #endedBanner{
+    position:absolute; top:60px; left:50%; transform:translateX(-50%);
+    background: rgba(193,85,59,0.15); border:1px solid var(--danger);
+    color: #ffb8a3; padding:8px 16px; border-radius:20px; font-size:13px;
+    display:none; z-index:15;
+  }
+</style>
 </head>
 <body>
 
@@ -61,6 +213,537 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script type="module" src="app.js"></script>
+
+<script type="module">
+/* ============================================================
+   FIREBASE CONFIG — thay bằng config thật của bạn
+   (Firebase Console > Project settings > SDK setup and config)
+   ============================================================ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase, ref, set, get, push, update,
+  onChildAdded, runTransaction
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "YOUR_PROJECT",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+/* ============================================================
+   CONSTANTS
+   ============================================================ */
+const ROOM_DURATION_MS = 10 * 60 * 1000; // 10 phút
+const MAX_PLAYERS = 200;
+const GRID_COLS = 15;                    // 15 x 14 = 210 >= 200 lô đất
+const PLOT_SPACING = 12;                 // khoảng cách giữa các lô (three.js units)
+const FLOOR_UNIT = 1.4;                  // chiều cao 1 tầng (three.js units)
+const BASE_WIDTH = 6;                    // bề rộng móng nhà (units)
+const MAX_FLOORS = 45;                   // giới hạn số tầng / nhà (hiệu năng + chi phí)
+const MISS_TOLERANCE = 0.15;             // overlap tối thiểu để tính là "trúng"
+
+const PLAYER_COLORS = [
+  "#f4b740","#5ea88a","#c1553b","#6f9ceb","#d98fd9",
+  "#e0895a","#7fd1c7","#c9a0f5","#f28fa3","#8bd17f"
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+  uid: getOrCreateUid(),
+  name: "",
+  color: "#f4b740",
+  roomCode: null,
+  plotIndex: 0,
+  isHost: false,
+  endsAt: 0,
+  locked: false,
+  mode: "build", // 'build' | 'observe'
+  floors: [],        // local building state (own tower)
+  movingX: 0,
+  movingDir: 1,
+  currentWidth: BASE_WIDTH,
+  timerHandle: null,
+};
+
+function getOrCreateUid(){
+  let uid = sessionStorage.getItem("cb_uid");
+  if(!uid){
+    uid = (crypto.randomUUID ? crypto.randomUUID() : "u" + Math.random().toString(36).slice(2));
+    sessionStorage.setItem("cb_uid", uid);
+  }
+  return uid;
+}
+
+function generateRoomCode(){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for(let i=0;i<5;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+
+/* ============================================================
+   LOBBY UI
+   ============================================================ */
+const $ = (sel) => document.querySelector(sel);
+const nameInput = $("#nameInput");
+const codeInput = $("#codeInput");
+const lobbyError = $("#lobbyError");
+
+$("#createRoomBtn").addEventListener("click", async () => {
+  const name = nameInput.value.trim();
+  if(!name){ lobbyError.textContent = "Nhập tên trước đã nhé."; return; }
+  setLobbyBusy(true);
+  try{
+    const code = await createRoom(name);
+    await joinRoom(code, name, true);
+  }catch(err){
+    console.error(err);
+    lobbyError.textContent = "Không tạo được phòng, thử lại nhé.";
+  }
+  setLobbyBusy(false);
+});
+
+$("#joinRoomBtn").addEventListener("click", async () => {
+  const name = nameInput.value.trim();
+  const code = codeInput.value.trim().toUpperCase();
+  if(!name){ lobbyError.textContent = "Nhập tên trước đã nhé."; return; }
+  if(!code){ lobbyError.textContent = "Nhập mã phòng."; return; }
+  setLobbyBusy(true);
+  try{
+    await joinRoom(code, name, false);
+  }catch(err){
+    console.error(err);
+    lobbyError.textContent = err.message || "Không vào được phòng.";
+  }
+  setLobbyBusy(false);
+});
+
+function setLobbyBusy(busy){
+  $("#createRoomBtn").disabled = busy;
+  $("#joinRoomBtn").disabled = busy;
+  if(busy) lobbyError.textContent = ""; // chỉ xoá lỗi cũ khi BẮT ĐẦU thao tác mới, không xoá sau khi vừa set lỗi mới
+}
+
+/* ============================================================
+   ROOM CREATE / JOIN
+   ============================================================ */
+async function createRoom(hostName){
+  let code;
+  for(let i=0;i<5;i++){
+    const candidate = generateRoomCode();
+    const snap = await get(ref(db, `cityRooms/${candidate}/meta`));
+    if(!snap.exists()){ code = candidate; break; }
+  }
+  if(!code) throw new Error("retry");
+
+  const now = Date.now();
+  await set(ref(db, `cityRooms/${code}/meta`), {
+    hostId: state.uid,
+    createdAt: now,
+    endsAt: now + ROOM_DURATION_MS,
+    playerCount: 0
+  });
+  return code;
+}
+
+async function joinRoom(code, name, isHost){
+  const metaSnap = await get(ref(db, `cityRooms/${code}/meta`));
+  if(!metaSnap.exists()) throw new Error("Không tìm thấy phòng này.");
+  const meta = metaSnap.val();
+  if(Date.now() > meta.endsAt) throw new Error("Phòng đã kết thúc.");
+
+  const counterRef = ref(db, `cityRooms/${code}/meta/playerCount`);
+  const result = await runTransaction(counterRef, (current) => {
+    current = current || 0;
+    if(current >= MAX_PLAYERS) return; // abort transaction -> room full
+    return current + 1;
+  });
+  if(!result.committed) throw new Error("Phòng đã đầy (200 người).");
+
+  const plotIndex = result.snapshot.val() - 1;
+  const color = PLAYER_COLORS[plotIndex % PLAYER_COLORS.length];
+
+  state.roomCode = code;
+  state.plotIndex = plotIndex;
+  state.name = name;
+  state.color = color;
+  state.isHost = isHost;
+  state.endsAt = meta.endsAt;
+
+  await set(ref(db, `cityRooms/${code}/players/${state.uid}`), {
+    name, color, plotIndex, joinedAt: Date.now()
+  });
+
+  enterGame(code);
+}
+
+/* ============================================================
+   ENTER GAME
+   ============================================================ */
+function enterGame(code){
+  $("#lobby").style.display = "none";
+  $("#game").style.display = "block";
+  $("#roomCodeDisplay").textContent = code;
+
+  // móng nhà (tầng 0) — luôn có sẵn cho mọi người
+  const foundation = { w: BASE_WIDTH, x: 0 };
+  state.floors = [foundation];
+  state.currentWidth = BASE_WIDTH;
+  pushBlockToFirebase(foundation);
+
+  startTimer();
+  startCityListeners(code);
+  initBuildCanvas();
+  initObserveScene();
+  requestAnimationFrame(buildLoop);
+
+  $("#toggleModeBtn").addEventListener("click", toggleMode);
+  window.addEventListener("keydown", (e) => { if(e.code === "Space") { e.preventDefault(); onDropInput(); } });
+}
+
+/* ============================================================
+   TIMER
+   ============================================================ */
+function startTimer(){
+  const timerEl = $("#timer");
+  state.timerHandle = setInterval(() => {
+    const remain = state.endsAt - Date.now();
+    if(remain <= 0){
+      clearInterval(state.timerHandle);
+      timerEl.textContent = "00:00";
+      lockBuilding();
+      return;
+    }
+    const m = Math.floor(remain / 60000);
+    const s = Math.floor((remain % 60000) / 1000);
+    timerEl.textContent = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    timerEl.classList.toggle("low", remain < 60000);
+  }, 250);
+}
+
+function lockBuilding(){
+  state.locked = true;
+  $("#endedBanner").style.display = "block";
+  $("#dropHint").style.display = "none";
+}
+
+/* ============================================================
+   BUILD MODE (2D) — Tower Bloxx style
+   ============================================================ */
+let ctx, canvasW, canvasH;
+const SCALE_PX = 26;   // px trên mỗi unit bề rộng
+const FLOOR_H_PX = 28; // px trên mỗi tầng
+const AMPLITUDE = 5;   // biên độ di chuyển khối (units)
+let baseSpeed = 2.6;   // units/giây
+
+function initBuildCanvas(){
+  const canvas = $("#buildCanvas");
+  ctx = canvas.getContext("2d");
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
+  canvas.addEventListener("pointerdown", onDropInput);
+  resetMovingBlock();
+}
+
+function resizeCanvas(){
+  const canvas = $("#buildCanvas");
+  canvasW = canvas.width = canvas.clientWidth * devicePixelRatio;
+  canvasH = canvas.height = canvas.clientHeight * devicePixelRatio;
+}
+
+function resetMovingBlock(){
+  state.movingX = 0;
+  state.movingDir = 1;
+}
+
+let lastT = performance.now();
+function buildLoop(t){
+  const dt = Math.min((t - lastT) / 1000, 0.05);
+  lastT = t;
+
+  if(state.mode === "build"){
+    if(!state.locked){
+      const speed = baseSpeed + Math.min(state.floors.length * 0.035, 2.2);
+      const half = state.currentWidth / 2;
+      state.movingX += state.movingDir * speed * dt;
+      if(state.movingX + half > AMPLITUDE){ state.movingX = AMPLITUDE - half; state.movingDir = -1; }
+      if(state.movingX - half < -AMPLITUDE){ state.movingX = -AMPLITUDE + half; state.movingDir = 1; }
+    }
+    drawBuild();
+  }
+  requestAnimationFrame(buildLoop);
+}
+
+function drawBuild(){
+  const cx = canvasW / 2;
+  const scale = SCALE_PX * devicePixelRatio;
+  const floorH = FLOOR_H_PX * devicePixelRatio;
+  const floors = state.floors;
+  const scrollY = Math.max(0, floors.length - Math.floor(canvasH / floorH) + 4) * floorH;
+
+  ctx.fillStyle = "#0f1b2d";
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  // grid nhẹ phía sau
+  ctx.strokeStyle = "rgba(36,64,95,0.35)";
+  ctx.lineWidth = 1;
+  for(let y = canvasH + scrollY % floorH; y > -floorH; y -= floorH){
+    ctx.beginPath(); ctx.moveTo(0, y - scrollY); ctx.lineTo(canvasW, y - scrollY); ctx.stroke();
+  }
+
+  // các tầng đã xây
+  floors.forEach((f, i) => {
+    const y = canvasH - (i + 1) * floorH + scrollY;
+    const x = cx + f.x * scale - (f.w * scale) / 2;
+    ctx.fillStyle = i === 0 ? "#3a4d63" : state.color;
+    roundRect(ctx, x, y, f.w * scale, floorH - 2, 4);
+    ctx.fill();
+  });
+
+  // khối đang di chuyển
+  if(!state.locked && floors.length < MAX_FLOORS){
+    const y = canvasH - (floors.length + 1) * floorH + scrollY;
+    const x = cx + state.movingX * scale - (state.currentWidth * scale) / 2;
+    ctx.fillStyle = state.color;
+    ctx.globalAlpha = 0.9;
+    roundRect(ctx, x, y, state.currentWidth * scale, floorH - 2, 4);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  $("#floorNum").textContent = Math.max(0, floors.length - 1);
+}
+
+function roundRect(c, x, y, w, h, r){
+  c.beginPath();
+  c.moveTo(x+r, y);
+  c.arcTo(x+w, y, x+w, y+h, r);
+  c.arcTo(x+w, y+h, x, y+h, r);
+  c.arcTo(x, y+h, x, y, r);
+  c.arcTo(x, y, x+w, y, r);
+  c.closePath();
+}
+
+function onDropInput(){
+  if(state.mode !== "build" || state.locked) return;
+  if(state.floors.length >= MAX_FLOORS) return;
+  dropBlock();
+}
+
+function dropBlock(){
+  const prev = state.floors[state.floors.length - 1];
+  const curX = state.movingX, curW = state.currentWidth;
+  const prevLeft = prev.x - prev.w/2, prevRight = prev.x + prev.w/2;
+  const curLeft = curX - curW/2, curRight = curX + curW/2;
+  const overlapLeft = Math.max(prevLeft, curLeft);
+  const overlapRight = Math.min(prevRight, curRight);
+  const overlapW = overlapRight - overlapLeft;
+
+  if(overlapW <= MISS_TOLERANCE){
+    showToast("Trượt rồi! Thử lại tầng này 👀");
+    return; // không mất tầng, chỉ cần thử lại (game thân thiện, không "game over")
+  }
+
+  const newWidth = overlapW;
+  const newX = (overlapLeft + overlapRight) / 2;
+  const floorData = { w: newWidth, x: newX };
+  state.floors.push(floorData);
+  state.currentWidth = newWidth;
+
+  pushBlockToFirebase(floorData);
+
+  if(state.floors.length >= MAX_FLOORS){
+    showToast("Chúc mừng! Nhà bạn đã đạt chiều cao tối đa 🏙️");
+  }
+}
+
+function showToast(msg){
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => el.classList.remove("show"), 1400);
+}
+
+/* ============================================================
+   FIREBASE SYNC — ghi block của chính mình
+   ============================================================ */
+function pushBlockToFirebase(floorData){
+  if(!state.roomCode) return;
+  const blocksRef = ref(db, `cityRooms/${state.roomCode}/players/${state.uid}/blocks`);
+  push(blocksRef, { ...floorData, color: state.color, t: Date.now() });
+}
+
+/* ============================================================
+   CITY LISTENERS — nhận dữ liệu của tất cả người chơi (real-time)
+   ============================================================ */
+const cityPlayers = new Map(); // uid -> { group, nameSprite, floorCount, x, z, color, name }
+
+function startCityListeners(code){
+  const playersRef = ref(db, `cityRooms/${code}/players`);
+  onChildAdded(playersRef, (snap) => {
+    const uid = snap.key;
+    const data = snap.val();
+    registerCityPlayer(uid, data);
+
+    const blocksRef = ref(db, `cityRooms/${code}/players/${uid}/blocks`);
+    onChildAdded(blocksRef, (bsnap) => {
+      addBlockToCity(uid, bsnap.val());
+    });
+  });
+}
+
+/* ============================================================
+   OBSERVE MODE (3D) — three.js
+   ============================================================ */
+let renderer, scene, camera, controls, groundGrid;
+let observeAnimating = false;
+
+function initObserveScene(){
+  const container = $("#observeContainer");
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0f1b2d);
+  scene.fog = new THREE.Fog(0x0f1b2d, 80, 260);
+
+  const citySpan = GRID_COLS * PLOT_SPACING;
+  camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 1000);
+  camera.position.set(citySpan * 0.15, citySpan * 0.55, citySpan * 0.55);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(renderer.domElement);
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.target.set(citySpan / 2, 0, citySpan / 2);
+  controls.maxPolarAngle = Math.PI * 0.49;
+  controls.minDistance = 10;
+  controls.maxDistance = citySpan * 1.3;
+  controls.update();
+
+  const hemi = new THREE.HemisphereLight(0xbfd8ff, 0x1a2436, 0.9);
+  scene.add(hemi);
+  const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+  dir.position.set(60, 120, 40);
+  scene.add(dir);
+
+  groundGrid = new THREE.GridHelper(citySpan + PLOT_SPACING, GRID_COLS + 1, 0x24405f, 0x1a2c42);
+  groundGrid.position.set(citySpan/2 - PLOT_SPACING/2, 0, citySpan/2 - PLOT_SPACING/2);
+  scene.add(groundGrid);
+
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x122032, roughness: 1 });
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(citySpan*2, citySpan*2), groundMat);
+  ground.rotation.x = -Math.PI/2;
+  ground.position.y = -0.02;
+  scene.add(ground);
+
+  window.addEventListener("resize", () => {
+    if(!container.clientWidth) return;
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+
+  observeAnimating = true;
+  requestAnimationFrame(observeLoop);
+}
+
+function observeLoop(){
+  requestAnimationFrame(observeLoop);
+  if(state.mode !== "observe") return;
+  controls.update();
+  updateAllNameSpritesFacing();
+  renderer.render(scene, camera);
+}
+
+function plotPosition(plotIndex){
+  const col = plotIndex % GRID_COLS;
+  const row = Math.floor(plotIndex / GRID_COLS);
+  return { x: col * PLOT_SPACING, z: row * PLOT_SPACING };
+}
+
+function registerCityPlayer(uid, data){
+  if(cityPlayers.has(uid)) return;
+  const { x, z } = plotPosition(data.plotIndex);
+  const group = new THREE.Group();
+  group.position.set(x, 0, z);
+  scene.add(group);
+
+  const nameSprite = makeNameSprite(data.name);
+  nameSprite.position.set(0, 1.2, 0);
+  group.add(nameSprite);
+
+  cityPlayers.set(uid, {
+    group, nameSprite, floorCount: 0, x, z,
+    color: data.color, name: data.name
+  });
+}
+
+function addBlockToCity(uid, block){
+  const entry = cityPlayers.get(uid);
+  if(!entry) return;
+  const geo = new THREE.BoxGeometry(block.w, FLOOR_UNIT * 0.95, block.w);
+  const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(block.color || entry.color), roughness: 0.6 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(block.x, entry.floorCount * FLOOR_UNIT + FLOOR_UNIT/2, 0);
+  entry.group.add(mesh);
+  entry.floorCount += 1;
+  entry.nameSprite.position.y = entry.floorCount * FLOOR_UNIT + 1.0;
+}
+
+function makeNameSprite(name){
+  const canvas = document.createElement("canvas");
+  const size = 256;
+  canvas.width = size; canvas.height = 64;
+  const c = canvas.getContext("2d");
+  c.font = "600 30px Inter, sans-serif";
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  // nền nhãn tên
+  const textWidth = c.measureText(name).width;
+  const padX = 18;
+  c.fillStyle = "rgba(15,27,45,0.85)";
+  roundRect(c, size/2 - textWidth/2 - padX, 12, textWidth + padX*2, 40, 10);
+  c.fill();
+  c.fillStyle = "#eae6da";
+  c.fillText(name, size/2, 32);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(4.2, 1.05, 1);
+  sprite.renderOrder = 999;
+  return sprite;
+}
+
+function updateAllNameSpritesFacing(){
+  // THREE.Sprite luôn tự quay mặt về camera mặc định, không cần xử lý thêm
+}
+
+/* ============================================================
+   TOGGLE BUILD / OBSERVE
+   ============================================================ */
+function toggleMode(){
+  if(state.mode === "build"){
+    state.mode = "observe";
+    $("#buildScreen").style.display = "none";
+    $("#observeScreen").style.display = "block";
+    $("#toggleModeBtn").textContent = "Về xây nhà ⤵";
+  } else {
+    state.mode = "build";
+    $("#observeScreen").style.display = "none";
+    $("#buildScreen").style.display = "block";
+    $("#toggleModeBtn").textContent = "Xem toàn cảnh ⤴";
+    resizeCanvas();
+  }
+}
+</script>
 </body>
 </html>
